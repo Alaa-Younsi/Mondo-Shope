@@ -8,7 +8,11 @@ import { Field, Input, Select, Textarea } from "@/components/ui/Form";
 import { Price } from "@/components/ui/Price";
 import { Spinner } from "@/components/ui/Feedback";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { useHoneypot, honeypotFieldProps } from "@/hooks/useHoneypot";
+import {
+  useHoneypot,
+  honeypotFieldProps,
+  honeypotWrapperProps,
+} from "@/hooks/useHoneypot";
 import { useDeliveryPrices, useStoreSettings, resolveShipping } from "@/hooks/useStoreSettings";
 import { usePixel } from "@/components/MetaPixelProvider";
 import { supabase } from "@/lib/supabase";
@@ -203,8 +207,10 @@ export function CheckoutForm({
 
   return (
     <form onSubmit={onSubmit} onFocus={handleFormFocus} className={cn("space-y-4", className)} noValidate>
-      {/* Honeypot */}
-      <input {...register("company")} {...honeypotFieldProps} />
+      {/* Honeypot. The wrapper is load-bearing — see honeypotWrapperProps. */}
+      <div {...honeypotWrapperProps}>
+        <input {...register("company")} {...honeypotFieldProps} />
+      </div>
 
       <div className={cn("grid gap-4", !compact && "sm:grid-cols-2")}>
         <Field label={t("fullName")} required error={errors.name?.message} htmlFor="co-name">

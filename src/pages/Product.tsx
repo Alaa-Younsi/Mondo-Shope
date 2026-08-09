@@ -13,7 +13,7 @@ import { CheckoutForm, type CheckoutLine } from "@/components/checkout/CheckoutF
 import { Button } from "@/components/ui/Button";
 import { Badge, SectionHeading } from "@/components/ui/Badge";
 import { EmptyState, LoadingBlock } from "@/components/ui/Feedback";
-import { Price } from "@/components/ui/Price";
+import { Discount, Price } from "@/components/ui/Price";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useProduct, useRelatedProducts } from "@/hooks/useCatalog";
 import { useSeo, SITE_URL } from "@/hooks/useSeo";
@@ -199,7 +199,11 @@ export default function Product() {
         <div className="space-y-6">
           <div>
             <div className="mb-3 flex flex-wrap items-center gap-2">
-              {off !== null && <Badge tone="brand">-{off}%</Badge>}
+              {off !== null && (
+                <Badge tone="brand">
+                  <Discount value={off} />
+                </Badge>
+              )}
               <Badge tone={soldOut ? "danger" : "success"}>
                 {soldOut ? t("outOfStock") : t("inStock")}
               </Badge>

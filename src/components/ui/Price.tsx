@@ -27,6 +27,21 @@ export function Price({ value, prefix, className }: PriceProps) {
   );
 }
 
+/**
+ * A discount badge, e.g. "-24%".
+ *
+ * The leading "-" is a bidi-neutral character at the start of the run, so in the
+ * Arabic layout it is reordered to the far side and the badge renders "24%-".
+ * Same fix as Price: pin the run with dir="ltr" in one place.
+ */
+export function Discount({ value, className }: { value: number; className?: string }) {
+  return (
+    <span dir="ltr" className={cn("tabular-nums", className)}>
+      -{value}%
+    </span>
+  );
+}
+
 /** Same bidi protection for any bare number sitting next to a unit or label. */
 export function Num({ value, className }: { value: number | string; className?: string }) {
   return (

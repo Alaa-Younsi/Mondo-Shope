@@ -8,7 +8,7 @@ import {
   QuantityStepper,
   SizePicker,
 } from "@/components/product/VariantPickers";
-import { Price } from "@/components/ui/Price";
+import { Discount, Price } from "@/components/ui/Price";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useReviews } from "@/hooks/useReviews";
 import { resolveIcon } from "@/lib/icons";
@@ -311,7 +311,7 @@ export function LandingBlockView({
 
             {off !== null && (
               <p className="mt-2 font-mono text-xs uppercase tracking-widest text-brand">
-                -{off}%
+                <Discount value={off} />
               </p>
             )}
 

@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Eye } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { Price } from "@/components/ui/Price";
+import { Discount, Price } from "@/components/ui/Price";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { discountPercent, pick } from "@/lib/utils";
 import type { Product } from "@/types/db";
@@ -44,7 +44,11 @@ export function ProductCard({ product }: { product: Product }) {
         <div className="absolute inset-0 bg-brand opacity-0 transition-opacity duration-300 group-hover:opacity-10" />
 
         <div className="absolute start-3 top-3 flex flex-col items-start gap-1.5">
-          {off !== null && <Badge tone="brand">-{off}%</Badge>}
+          {off !== null && (
+            <Badge tone="brand">
+              <Discount value={off} />
+            </Badge>
+          )}
           {soldOut && <Badge tone="danger">{t("outOfStock")}</Badge>}
         </div>
 

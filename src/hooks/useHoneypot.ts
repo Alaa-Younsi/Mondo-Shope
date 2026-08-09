@@ -21,8 +21,32 @@ export function useHoneypot(minMs = 1500) {
   return { isSpam };
 }
 
+/**
+ * Wrapper for the honeypot input. It MUST be rendered — the input alone blanks
+ * every Arabic page that carries a checkout form.
+ *
+ * The input is parked at -9999px, and an absolutely positioned element is only
+ * clipped by an ancestor's `overflow` when that ancestor is its containing
+ * block — i.e. is itself positioned. The form is not, so the input escapes to
+ * the initial containing block and adds ~10 000px of overflow to the LEFT of
+ * the viewport. In LTR that overflow is unreachable by spec and nothing shows
+ * for it. Under `dir="rtl"` leftward IS the scrollable direction, so the
+ * document became 11 255px wide and opened parked in the empty margin: a
+ * perfectly blank page with a fully rendered DOM behind it.
+ *
+ * `relative` makes this div the containing block and `overflow-hidden` then
+ * genuinely clips the input, while `h-0 w-0` keeps it out of the layout. The
+ * input stays a real, off-screen, non-`display:none` field, which is what makes
+ * the honeypot work at all.
+ */
+export const honeypotWrapperProps = {
+  "aria-hidden": true,
+  className: "relative h-0 w-0 overflow-hidden",
+} as const;
+
 /** Props for the hidden input. Keep it off-screen, not `display:none` — some
- *  bots skip hidden inputs but fill positioned ones. */
+ *  bots skip hidden inputs but fill positioned ones. Render inside a
+ *  {@link honeypotWrapperProps} div. */
 export const honeypotFieldProps = {
   tabIndex: -1,
   autoComplete: "off",
