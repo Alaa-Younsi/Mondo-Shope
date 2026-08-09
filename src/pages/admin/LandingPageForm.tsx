@@ -420,7 +420,7 @@ export default function LandingPageForm() {
               <div className="flex gap-2">
                 <input
                   type="color"
-                  value={form.theme.accent ?? "#faa642"}
+                  value={form.theme.accent ?? "#d08921"}
                   onChange={(event) =>
                     patch({ theme: { ...form.theme, accent: event.target.value } })
                   }
