@@ -29,6 +29,10 @@ function toFormState(row: StoreSettings): SettingsFormState {
     announcement_ar: row.announcement_ar,
     announcement_active: row.announcement_active,
     hero_slides: Array.isArray(row.hero_slides) ? row.hero_slides : [],
+    marquee_main_fr: row.marquee_main_fr ?? null,
+    marquee_main_ar: row.marquee_main_ar ?? null,
+    marquee_sub_fr: row.marquee_sub_fr ?? null,
+    marquee_sub_ar: row.marquee_sub_ar ?? null,
   };
 }
 
@@ -341,6 +345,52 @@ export default function AdminSettings() {
               <ImagePlus size={14} />
               {t("setHeroAdd")}
             </Button>
+          </div>
+        </Panel>
+
+        <Panel title={t("setMarquee")}>
+          <div className="space-y-4">
+            <p className="text-xs leading-relaxed text-muted">{t("setMarqueeHint")}</p>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label={t("setMarqueeMainFr")}>
+                <Input
+                  placeholder={t("marqueeMain")}
+                  value={form.marquee_main_fr ?? ""}
+                  onChange={(event) =>
+                    patch({ marquee_main_fr: event.target.value || null })
+                  }
+                />
+              </Field>
+              <Field label={t("setMarqueeMainAr")}>
+                <Input
+                  dir="rtl"
+                  placeholder={t("marqueeMain")}
+                  value={form.marquee_main_ar ?? ""}
+                  onChange={(event) =>
+                    patch({ marquee_main_ar: event.target.value || null })
+                  }
+                />
+              </Field>
+              <Field label={t("setMarqueeSubFr")}>
+                <Input
+                  placeholder={t("marqueeSub")}
+                  value={form.marquee_sub_fr ?? ""}
+                  onChange={(event) =>
+                    patch({ marquee_sub_fr: event.target.value || null })
+                  }
+                />
+              </Field>
+              <Field label={t("setMarqueeSubAr")}>
+                <Input
+                  dir="rtl"
+                  placeholder={t("marqueeSub")}
+                  value={form.marquee_sub_ar ?? ""}
+                  onChange={(event) =>
+                    patch({ marquee_sub_ar: event.target.value || null })
+                  }
+                />
+              </Field>
+            </div>
           </div>
         </Panel>
       </div>

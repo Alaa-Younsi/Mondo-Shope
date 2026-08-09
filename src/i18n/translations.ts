@@ -78,7 +78,7 @@ export const translations = {
     clearCart: "Vider le panier",
 
     // ---- home --------------------------------------------------------------
-    heroEyebrow: "Paiement à la livraison — 58 wilayas",
+    heroEyebrow: "Paiement à la livraison — 69 wilayas",
     heroTitle: "Des produits vérifiés, livrés chez vous",
     heroSubtitle:
       "Commandez en quelques secondes et payez à la réception. Aucune carte bancaire, aucun paiement à l'avance.",
@@ -87,7 +87,7 @@ export const translations = {
     statWilayas: "Wilayas",
     statCategories: "Catégories",
     statReviews: "Avis clients",
-    marqueeMain: "Paiement à la livraison • 58 wilayas • Produits vérifiés",
+    marqueeMain: "Paiement à la livraison • 69 wilayas • Produits vérifiés",
     marqueeSub: "Commandez en quelques secondes • Payez à la réception",
     featuredTitle: "Sélection du moment",
     featuredSubtitle: "Les produits les plus demandés en ce moment.",
@@ -103,7 +103,7 @@ export const translations = {
     howStep3Text: "Vous réglez en espèces au moment de la réception.",
     trustCod: "Paiement à la livraison",
     trustCodText: "Vous payez uniquement à la réception.",
-    trustDelivery: "Livraison 58 wilayas",
+    trustDelivery: "Livraison 69 wilayas",
     trustDeliveryText: "À domicile ou au bureau de livraison.",
     trustQuality: "Produits vérifiés",
     trustQualityText: "Chaque article est contrôlé avant expédition.",
@@ -413,6 +413,13 @@ export const translations = {
     setHeroLink: "Lien",
     setHeroLinkHint: "Facultatif — ex. /produit/mon-produit",
     setHeroImageRequired: "Chaque diapositive doit avoir une image.",
+    setMarquee: "Bandes défilantes (accueil)",
+    setMarqueeHint:
+      "Les deux bandes qui défilent sous la sélection. Laissez vide pour garder le texte par défaut.",
+    setMarqueeMainFr: "Bande principale (français)",
+    setMarqueeMainAr: "Bande principale (arabe)",
+    setMarqueeSubFr: "Bande secondaire (français)",
+    setMarqueeSubAr: "Bande secondaire (arabe)",
 
     // ---- admin: account ----------------------------------------------------
     accTitle: "Mon compte",
@@ -652,7 +659,7 @@ export const translations = {
     clearCart: "إفراغ السلة",
 
     // ---- home --------------------------------------------------------------
-    heroEyebrow: "الدفع عند الاستلام — 58 ولاية",
+    heroEyebrow: "الدفع عند الاستلام — 69 ولاية",
     heroTitle: "منتجات مضمونة، تصلك إلى باب بيتك",
     heroSubtitle:
       "اطلب في ثوانٍ وادفع عند الاستلام. بدون بطاقة بنكية وبدون دفع مسبق.",
@@ -661,7 +668,7 @@ export const translations = {
     statWilayas: "ولاية",
     statCategories: "فئة",
     statReviews: "رأي زبون",
-    marqueeMain: "الدفع عند الاستلام • 58 ولاية • منتجات مضمونة",
+    marqueeMain: "الدفع عند الاستلام • 69 ولاية • منتجات مضمونة",
     marqueeSub: "اطلب في ثوانٍ • ادفع عند الاستلام",
     featuredTitle: "مختارات اليوم",
     featuredSubtitle: "أكثر المنتجات طلبًا حاليًا.",
@@ -677,7 +684,7 @@ export const translations = {
     howStep3Text: "تدفع نقدًا عند استلام الطرد.",
     trustCod: "الدفع عند الاستلام",
     trustCodText: "تدفع فقط عند استلام طلبك.",
-    trustDelivery: "التوصيل إلى 58 ولاية",
+    trustDelivery: "التوصيل إلى 69 ولاية",
     trustDeliveryText: "إلى المنزل أو إلى مكتب التوصيل.",
     trustQuality: "منتجات مفحوصة",
     trustQualityText: "كل منتج يُفحص قبل الإرسال.",
@@ -983,6 +990,13 @@ export const translations = {
     setHeroLink: "الرابط",
     setHeroLinkHint: "اختياري — مثال: ‎/produit/mon-produit",
     setHeroImageRequired: "يجب أن تحتوي كل شريحة على صورة.",
+    setMarquee: "الأشرطة المتحركة (الصفحة الرئيسية)",
+    setMarqueeHint:
+      "الشريطان المتحركان أسفل قسم المختارات. اتركه فارغًا للإبقاء على النص الافتراضي.",
+    setMarqueeMainFr: "الشريط الرئيسي (بالفرنسية)",
+    setMarqueeMainAr: "الشريط الرئيسي (بالعربية)",
+    setMarqueeSubFr: "الشريط الثانوي (بالفرنسية)",
+    setMarqueeSubAr: "الشريط الثانوي (بالعربية)",
 
     // ---- admin: account ----------------------------------------------------
     accTitle: "حسابي",

@@ -52,12 +52,6 @@ export default {
         mono: ["'IBM Plex Mono'", "ui-monospace", "monospace"],
         ar: ["'Noto Kufi Arabic'", "system-ui", "sans-serif"],
       },
-      spacing: {
-        // Referenced by Button's lg size and the header cart badge; neither is
-        // on Tailwind's default scale.
-        13: "3.25rem",
-        4.5: "1.125rem",
-      },
       boxShadow: {
         glow: "0 0 24px -4px rgb(var(--c-brand) / 0.45)",
         "glow-sm": "0 0 12px -2px rgb(var(--c-brand) / 0.4)",

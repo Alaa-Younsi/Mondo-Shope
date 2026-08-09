@@ -21,22 +21,27 @@
 :root,
 html[data-theme="dark"] {
   color-scheme: dark;
-  --c-bg: 10 10 11;
-  --c-panel: 13 13 14;
-  --c-panel-2: 20 20 22;
-  --c-line: 35 35 38;
-  --c-ink: 245 245 244;
-  --c-muted: 138 138 144;
+  /* Warm, not neutral. The surfaces are tinted toward the palette's burnt
+     tones rather than pure grey — a neutral #0A0A0B under an ochre accent
+     reads as soot, and made the whole page feel darker than it measured.
+     Everything here is lifted several stops and pulled toward brown. */
+  --c-bg: 26 21 16;
+  --c-panel: 35 28 20;
+  --c-panel-2: 46 37 26;
+  --c-line: 68 54 37;
+  --c-ink: 252 246 237;
+  --c-muted: 178 160 136;
   --c-brand: 208 137 33;
   --c-brand-dim: 192 124 27;
   --c-brand-lite: 255 199 116;
   --c-brand-deep: 204 107 20;
-  --c-brand-ink: 10 8 4; /* text drawn ON a brand-colored surface */
+  --c-brand-ink: 26 17 4; /* text drawn ON a brand-colored surface */
   --c-danger: 239 68 68;
   --c-success: 34 197 94;
   --c-warning: 234 179 8;
-  --scanline-opacity: 0.035;
-  --grid-alpha: 0.05;
+  --scanline-opacity: 0.03;
+  --grid-alpha: 0.09;
+  --neon-strength: 1;
 }
 
 html[data-theme="light"] {
@@ -59,7 +64,9 @@ html[data-theme="light"] {
   --c-success: 21 128 61;
   --c-warning: 161 98 7;
   --scanline-opacity: 0.02;
-  --grid-alpha: 0.07;
+  --grid-alpha: 0.1;
+  /* Neon over cream is smog. The glow is nearly off in the light theme. */
+  --neon-strength: 0.25;
 }
 
 @layer base {
@@ -357,6 +364,78 @@ html[data-theme="light"] {
     background: rgb(var(--c-brand-lite));
     opacity: 0;
     animation: nw-line-b 4s infinite;
+  }
+
+  /* --- Neon -------------------------------------------------------------
+     One tunable knob, --neon-strength, scales every glow at once: full in the
+     dark theme, nearly off in light (a halo over cream just looks like smudged
+     ink). Glows are layered tight-then-wide — a single wide shadow reads as
+     blur, two reads as light.
+
+     These are all box/text-shadow, which the compositor handles on its own
+     layer, so none of it costs a repaint on scroll. */
+  .neon-text {
+    text-shadow:
+      0 0 6px rgb(var(--c-brand) / calc(0.55 * var(--neon-strength))),
+      0 0 20px rgb(var(--c-brand) / calc(0.32 * var(--neon-strength)));
+  }
+
+  .neon-text-lite {
+    text-shadow:
+      0 0 6px rgb(var(--c-brand-lite) / calc(0.5 * var(--neon-strength))),
+      0 0 22px rgb(var(--c-brand-lite) / calc(0.28 * var(--neon-strength)));
+  }
+
+  /* A bordered surface that lights its own edge. */
+  .neon-frame {
+    box-shadow:
+      0 0 0 1px rgb(var(--c-brand) / calc(0.25 * var(--neon-strength))),
+      0 0 18px -2px rgb(var(--c-brand) / calc(0.3 * var(--neon-strength))),
+      inset 0 0 24px -12px rgb(var(--c-brand) / calc(0.5 * var(--neon-strength)));
+  }
+
+  .neon-frame-hover {
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+  .neon-frame-hover:hover {
+    box-shadow:
+      0 0 0 1px rgb(var(--c-brand) / calc(0.45 * var(--neon-strength))),
+      0 0 26px -2px rgb(var(--c-brand) / calc(0.45 * var(--neon-strength))),
+      inset 0 0 30px -12px rgb(var(--c-brand) / calc(0.6 * var(--neon-strength)));
+  }
+
+  /* Filled accent surfaces (primary button, marquee band): the glow sits
+     outside, since an inset on a solid ochre fill is invisible. */
+  .neon-fill {
+    box-shadow:
+      0 0 14px -1px rgb(var(--c-brand) / calc(0.5 * var(--neon-strength))),
+      0 0 34px -4px rgb(var(--c-brand) / calc(0.35 * var(--neon-strength)));
+  }
+  .neon-fill:hover {
+    box-shadow:
+      0 0 18px 0 rgb(var(--c-brand-lite) / calc(0.6 * var(--neon-strength))),
+      0 0 44px -4px rgb(var(--c-brand) / calc(0.45 * var(--neon-strength)));
+  }
+
+  /* Outlined accent surfaces (secondary button). */
+  .neon-outline {
+    box-shadow:
+      0 0 12px -2px rgb(var(--c-brand) / calc(0.35 * var(--neon-strength))),
+      inset 0 0 14px -8px rgb(var(--c-brand) / calc(0.7 * var(--neon-strength)));
+  }
+  .neon-outline:hover {
+    box-shadow:
+      0 0 20px -1px rgb(var(--c-brand) / calc(0.5 * var(--neon-strength))),
+      inset 0 0 18px -6px rgb(var(--c-brand-lite) / calc(0.6 * var(--neon-strength)));
+  }
+
+  /* A hairline that glows — used above/below the marquee strips. */
+  .neon-band {
+    border-top: 1px solid rgb(var(--c-brand) / 0.35);
+    border-bottom: 1px solid rgb(var(--c-brand) / 0.35);
+    box-shadow:
+      0 0 20px -6px rgb(var(--c-brand) / calc(0.4 * var(--neon-strength))),
+      inset 0 0 30px -18px rgb(var(--c-brand) / calc(0.8 * var(--neon-strength)));
   }
 
   /* --- Marquee bands ----------------------------------------------------- */

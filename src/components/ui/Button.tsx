@@ -12,19 +12,20 @@ type Size = "sm" | "md" | "lg";
  */
 const VARIANTS: Record<Variant, string> = {
   primary:
-    "border border-brand bg-brand text-brand-ink hover:border-brand-dim hover:bg-brand-dim",
+    "neon-fill border border-brand bg-brand text-brand-ink hover:border-brand-lite hover:bg-brand-dim",
   secondary:
-    "border border-brand bg-transparent text-brand hover:bg-brand hover:text-brand-ink",
+    "neon-outline border border-brand bg-transparent text-brand hover:bg-brand hover:text-brand-ink",
   ghost: "border border-transparent bg-transparent text-muted hover:text-ink",
   danger: "border border-danger bg-danger text-white hover:brightness-110",
   outline: "border border-line bg-transparent text-ink hover:border-brand hover:text-brand",
 };
 
 const SIZES: Record<Size, string> = {
-  // ≥44px tall on md/lg: these are tapped on phones.
-  sm: "h-9 px-3 text-xs gap-1.5",
-  md: "h-11 px-6 text-sm gap-2",
-  lg: "h-13 px-8 text-base gap-2.5",
+  // Every size clears the 44px tap target except `sm`, which is admin-table
+  // furniture and never the primary action on a phone.
+  sm: "h-10 px-4 text-xs gap-1.5",
+  md: "h-12 px-7 text-sm gap-2",
+  lg: "h-14 px-10 text-lg gap-3",
 };
 
 const BASE =

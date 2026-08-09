@@ -1,7 +1,14 @@
 import { useEffect, useState } from "react";
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { Menu, Moon, ShoppingCart, Sun, X } from "lucide-react";
+import {
+  CartIcon,
+  CloseIcon,
+  GlobeIcon,
+  MenuIcon,
+  MoonIcon,
+  SunIcon,
+} from "@/components/ui/Icons";
 import { Wordmark } from "./Wordmark";
 import { CartDrawer } from "./CartDrawer";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -16,6 +23,10 @@ const NAV = [
   { to: "/", labelKey: "navHome" },
   { to: "/shop", labelKey: "navShop" },
 ] as const;
+
+/** Header control tile: 40px square, bordered, lights up on hover. */
+const CONTROL =
+  "flex h-10 w-10 flex-col items-center justify-center gap-0.5 border border-line text-muted transition-all duration-200 hover:border-brand hover:text-brand hover:shadow-[0_0_14px_-2px_rgb(var(--c-brand)/0.5)]";
 
 export function Header() {
   const { t, lang, setLang, dir } = useLanguage();
@@ -95,9 +106,9 @@ export function Header() {
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label={t("openMenu")}
-            className="-m-2 p-2 text-ink transition-colors hover:text-brand md:hidden"
+            className="-ms-2 flex h-11 w-11 items-center justify-center text-ink transition-colors hover:text-brand md:hidden"
           >
-            <Menu size={22} />
+            <MenuIcon size={24} />
           </button>
 
           <Wordmark />
@@ -125,38 +136,43 @@ export function Header() {
             ))}
           </nav>
 
-          <div className="ms-auto flex items-center gap-3">
+          {/* Square 40px control tiles: the icons were floating in dead space
+              before, which is most of why they read as small and stray. */}
+          <div className="ms-auto flex items-center gap-2">
             <button
               type="button"
               onClick={() => setLang(lang === "fr" ? "ar" : "fr")}
               aria-label={t("toggleLanguage")}
-              className="px-1 font-mono text-xs uppercase tracking-widest text-muted transition-colors hover:text-brand"
+              className={CONTROL}
             >
-              {lang === "fr" ? "ع" : "FR"}
+              <GlobeIcon size={20} />
+              <span className="font-mono text-[10px] font-bold uppercase leading-none tracking-wider">
+                {lang === "fr" ? "ع" : "FR"}
+              </span>
             </button>
 
             <button
               type="button"
               onClick={toggleTheme}
               aria-label={t("toggleTheme")}
-              className="text-muted transition-colors hover:text-brand"
+              className={CONTROL}
             >
-              {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+              {theme === "dark" ? <SunIcon size={20} /> : <MoonIcon size={20} />}
             </button>
 
             <button
               type="button"
               onClick={() => setCartOpen(true)}
               aria-label={t("cart")}
-              className="relative text-ink transition-colors hover:text-brand"
+              className={cn(CONTROL, "relative text-ink")}
             >
-              <ShoppingCart size={22} />
+              <CartIcon size={20} />
               {count > 0 && (
                 <motion.span
                   key={count}
                   initial={{ scale: 0.5 }}
                   animate={{ scale: 1 }}
-                  className="absolute -end-2 -top-2 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand px-1 font-mono text-[10px] font-bold leading-none text-brand-ink"
+                  className="neon-fill absolute -end-1.5 -top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand px-1 font-mono text-[10px] font-bold leading-none text-brand-ink"
                 >
                   <Num value={count} />
                 </motion.span>
@@ -195,9 +211,9 @@ export function Header() {
                   type="button"
                   onClick={() => setMenuOpen(false)}
                   aria-label={t("closeMenu")}
-                  className="-m-2 p-2 text-muted transition-colors hover:text-ink"
+                  className="-me-2 flex h-11 w-11 items-center justify-center text-muted transition-colors hover:text-brand"
                 >
-                  <X size={20} />
+                  <CloseIcon size={22} />
                 </button>
               </div>
 

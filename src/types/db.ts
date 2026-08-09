@@ -177,6 +177,11 @@ export interface StoreSettings {
   announcement_ar: string | null;
   announcement_active: boolean;
   hero_slides: HeroSlide[];
+  /** NULL falls back to the built-in FR/AR marquee strings. */
+  marquee_main_fr: string | null;
+  marquee_main_ar: string | null;
+  marquee_sub_fr: string | null;
+  marquee_sub_ar: string | null;
   updated_at: string;
 }
 

@@ -56,7 +56,7 @@ export function SectionHeading({
     >
       <div className={cn("min-w-0", align === "center" && "text-center")}>
         {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
-        <h2 className="font-display text-3xl font-black uppercase tracking-widest text-ink md:text-4xl">
+        <h2 className="neon-text font-display text-3xl font-black uppercase tracking-widest text-ink md:text-4xl">
           {title}
         </h2>
         {subtitle && <p className="mt-2 max-w-xl text-sm text-muted">{subtitle}</p>}

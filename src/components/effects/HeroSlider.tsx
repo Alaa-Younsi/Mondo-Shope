@@ -107,7 +107,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
       />
 
       <div
-        className="fx-ticks relative overflow-hidden border border-line bg-panel"
+        className="fx-ticks neon-frame relative overflow-hidden border border-line bg-panel"
         style={{ height: "clamp(340px, 55vh, 560px)" }}
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}

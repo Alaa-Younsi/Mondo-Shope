@@ -84,7 +84,7 @@ function StatCounter({
 
   return (
     <div ref={ref} className="text-center">
-      <div dir="ltr" className="font-mono text-2xl font-bold text-brand">
+      <div dir="ltr" className="neon-text font-mono text-3xl font-bold text-brand">
         {value}
       </div>
       <div className="mt-1 font-mono text-xs uppercase tracking-widest text-muted">
@@ -170,6 +170,11 @@ export default function Landing() {
   const categoryCount = (categories ?? []).length;
   const reviewCount = (reviews ?? []).length;
 
+  // Admin copy wins; a blank field falls back to the built-in string so the
+  // band is never an empty scrolling strip.
+  const marqueeMain = settings ? pick(lang, settings, "marquee_main") : "";
+  const marqueeSub = settings ? pick(lang, settings, "marquee_sub") : "";
+
   return (
     <>
       {/* Hero ------------------------------------------------------------- */}
@@ -195,7 +200,7 @@ export default function Landing() {
               variants={RISE}
               transition={{ duration: 0.6 }}
               data-text={t("heroTitle")}
-              className="glitch-text mb-2 font-display font-black uppercase leading-none text-ink"
+              className="glitch-text neon-text mb-2 font-display font-black uppercase leading-none text-ink"
               style={{ fontSize: "clamp(38px, 5.5vw, 76px)" }}
             >
               {t("heroTitle")}
@@ -214,11 +219,18 @@ export default function Landing() {
               transition={{ duration: 0.6 }}
               className="mb-10 flex flex-col gap-4 sm:flex-row"
             >
-              <ButtonLink to="/shop" size="lg">
+              {/* Full-bleed on phones: side-by-side halves are the reason
+                  these read as small on a narrow screen. */}
+              <ButtonLink to="/shop" size="lg" className="w-full sm:w-auto">
                 {t("heroCta")}
-                <ChevronRight size={16} className="rtl:rotate-180" />
+                <ChevronRight size={20} className="rtl:rotate-180" />
               </ButtonLink>
-              <ButtonLink to="/shop" variant="secondary" size="lg">
+              <ButtonLink
+                to="/shop"
+                variant="secondary"
+                size="lg"
+                className="w-full sm:w-auto"
+              >
                 {t("heroCtaSecondary")}
               </ButtonLink>
             </motion.div>
@@ -229,7 +241,7 @@ export default function Landing() {
               className="flex gap-8"
             >
               <StatCounter
-                target={58}
+                target={69}
                 label={t("statWilayas")}
                 animate={!reducedMotion}
               />
@@ -304,7 +316,7 @@ export default function Landing() {
               >
                 <Link
                   to={`/shop?categorie=${encodeURIComponent(category.slug)}`}
-                  className="group relative block h-full overflow-hidden border border-line bg-panel p-8 transition-all hover:border-brand hover:shadow-accent"
+                  className="neon-frame-hover group relative block h-full overflow-hidden border border-line bg-panel p-8 transition-all hover:border-brand"
                 >
                   {category.image_url && (
                     <img
@@ -355,13 +367,13 @@ export default function Landing() {
 
       {/* Marquee bands ---------------------------------------------------- */}
       <Marquee
-        text={t("marqueeMain")}
+        text={marqueeMain || t("marqueeMain")}
         className="bg-brand py-4 font-display text-2xl font-black text-brand-ink"
       />
       <Marquee
-        text={t("marqueeSub")}
+        text={marqueeSub || t("marqueeSub")}
         reverse
-        className="bg-panel py-3 font-display text-xl font-bold text-brand"
+        className="neon-band bg-panel py-3 font-display text-xl font-bold text-brand"
       />
 
       {/* How it works ----------------------------------------------------- */}

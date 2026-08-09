@@ -24,7 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     <Link
       to={`/produit/${product.slug}`}
-      className="group relative flex flex-col overflow-hidden border border-line bg-panel transition-all duration-300 hover:border-brand hover:shadow-accent"
+      className="neon-frame-hover group relative flex flex-col overflow-hidden border border-line bg-panel transition-all duration-300 hover:border-brand"
     >
       <div className="relative aspect-square overflow-hidden bg-panel-2">
         {image ? (
