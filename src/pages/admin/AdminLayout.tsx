@@ -169,7 +169,7 @@ export function AdminLayout() {
   //    first render bounces a legitimate admin.
   if (authLoading || (session && profileLoading)) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-bg">
+      <div className="admin-shell grid min-h-dvh place-items-center bg-bg">
         <LoadingBlock label={t("loading")} />
       </div>
     );
@@ -182,7 +182,7 @@ export function AdminLayout() {
   //    an empty dashboard and not a redirect loop.
   if (!isAdmin) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-bg px-6">
+      <div className="admin-shell grid min-h-dvh place-items-center bg-bg px-6">
         <div className="max-w-md text-center">
           <ShieldAlert size={44} className="mx-auto text-danger" />
           <h1 className="mt-5 font-display text-2xl font-bold uppercase tracking-tight text-ink">
@@ -211,7 +211,7 @@ export function AdminLayout() {
     <AdminToastProvider>
       {/* h-dvh + overflow-hidden, NOT min-h-screen: pinned, a 300-row orders
           table cannot drag the sidebar up out of view. */}
-      <div className="flex h-dvh overflow-hidden bg-bg">
+      <div className="admin-shell flex h-dvh overflow-hidden bg-bg">
         <aside className="hidden h-full w-64 shrink-0 flex-col overflow-hidden border-e border-line bg-panel p-5 lg:flex">
           <div className="mb-8 shrink-0">
             <Wordmark to="/admin" size="sm" />

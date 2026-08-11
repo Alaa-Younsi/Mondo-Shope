@@ -65,7 +65,9 @@ export function AdminToastProvider({ children }: { children: ReactNode }) {
     <ToastCtx.Provider value={value}>
       {children}
 
-      <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[200] flex flex-col items-center gap-2 sm:inset-x-auto sm:end-6 sm:items-end">
+      {/* admin-shell: the toast stack is a sibling of the dashboard tree, so it
+          needs the class itself to pick up the admin type scale. */}
+      <div className="admin-shell pointer-events-none fixed inset-x-4 bottom-4 z-[200] flex flex-col items-center gap-2 sm:inset-x-auto sm:end-6 sm:items-end">
         <AnimatePresence initial={false}>
           {toasts.map((toast) => (
             <motion.div

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { AlertCircle } from "lucide-react";
 import { Wordmark } from "@/components/layout/Wordmark";
 import { Button } from "@/components/ui/Button";
@@ -22,7 +22,7 @@ export default function AdminLogin() {
 
   if (isLoading) {
     return (
-      <div className="grid min-h-dvh place-items-center bg-bg">
+      <div className="admin-shell grid min-h-dvh place-items-center bg-bg">
         <LoadingBlock />
       </div>
     );
@@ -41,7 +41,7 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="fx-grid grid min-h-dvh place-items-center bg-bg px-4">
+    <div className="admin-shell fx-grid grid min-h-dvh place-items-center bg-bg px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex justify-center">
           <Wordmark />
@@ -92,6 +92,13 @@ export default function AdminLogin() {
             {submitting && <Spinner />}
             {submitting ? t("adminSigningIn") : t("adminSignIn")}
           </Button>
+
+          <Link
+            to="/admin/mot-de-passe-oublie"
+            className="block text-center text-sm text-muted transition-colors hover:text-brand"
+          >
+            {t("fpLink")}
+          </Link>
         </form>
       </div>
     </div>

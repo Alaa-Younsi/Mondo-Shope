@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { KeyRound } from "lucide-react";
+import { KeyRound, MailQuestion } from "lucide-react";
 import { AdminPage, Panel } from "@/components/admin/AdminPage";
 import { Button } from "@/components/ui/Button";
 import { Field, Input } from "@/components/ui/Form";
 import { Spinner } from "@/components/ui/Feedback";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { sendPasswordResetEmail } from "@/lib/passwordReset";
 import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import type { TranslationKey } from "@/i18n/translations";
@@ -23,6 +24,34 @@ export default function AdminAccount() {
     null,
   );
   const [saving, setSaving] = useState(false);
+
+  const [resetStatus, setResetStatus] = useState<{
+    tone: "ok" | "error";
+    key: TranslationKey;
+  } | null>(null);
+  const [sendingReset, setSendingReset] = useState(false);
+
+  /**
+   * The escape hatch for the form above: if the client cannot remember the
+   * CURRENT password, no amount of retrying that form helps him. Supabase mails
+   * a one-time recovery link that lands on /admin/nouveau-mot-de-passe, which
+   * sets the new password without asking for the old one.
+   */
+  const onSendResetLink = async () => {
+    if (!user?.email) return;
+    setResetStatus(null);
+    setSendingReset(true);
+    try {
+      const { error } = await sendPasswordResetEmail(user.email);
+      setResetStatus(
+        error
+          ? { tone: "error", key: "accResetLinkError" }
+          : { tone: "ok", key: "accResetLinkSent" },
+      );
+    } finally {
+      setSendingReset(false);
+    }
+  };
 
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -78,12 +107,45 @@ export default function AdminAccount() {
 
   return (
     <AdminPage title={t("accTitle")}>
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Panel title={t("accEmail")}>
-          <p dir="ltr" className="font-mono text-sm text-ink">
-            {user?.email ?? "—"}
-          </p>
-        </Panel>
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          <Panel title={t("accEmail")}>
+            <p dir="ltr" className="font-mono text-sm text-ink">
+              {user?.email ?? "—"}
+            </p>
+          </Panel>
+
+          <Panel title={t("accForgotTitle")}>
+            <div className="space-y-4">
+              <p className="text-sm leading-relaxed text-muted">{t("accForgotText")}</p>
+
+              {resetStatus && (
+                <p
+                  role="status"
+                  className={cn(
+                    "rounded-lg border p-3 text-sm",
+                    resetStatus.tone === "ok"
+                      ? "border-success/40 bg-success/10 text-success"
+                      : "border-danger/40 bg-danger/10 text-danger",
+                  )}
+                >
+                  {t(resetStatus.key)}
+                </p>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                fullWidth
+                disabled={sendingReset || !user?.email}
+                onClick={() => void onSendResetLink()}
+              >
+                {sendingReset ? <Spinner /> : <MailQuestion size={15} />}
+                {sendingReset ? t("accSendingResetLink") : t("accSendResetLink")}
+              </Button>
+            </div>
+          </Panel>
+        </div>
 
         <Panel title={t("accChangePassword")}>
           <form onSubmit={onSubmit} className="space-y-4">

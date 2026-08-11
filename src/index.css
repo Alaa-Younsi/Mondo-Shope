@@ -46,26 +46,27 @@ html[data-theme="dark"] {
 
 html[data-theme="light"] {
   color-scheme: light;
-  /* Warm cream rather than grey: the accent is an ochre, and a neutral grey
-     under it reads as dirt. */
-  --c-bg: 251 246 238;
-  --c-panel: 255 255 255;
-  --c-panel-2: 245 235 218;
-  --c-line: 227 211 182;
-  --c-ink: 26 20 10;
-  --c-muted: 107 94 72;
-  /* Darker than the dark-theme accent: #D08921 fails contrast on cream. */
+  /* Light grey, neutral. The ground is a soft grey rather than white so panels
+     can sit ON it and still read as raised, and the ochre accent is the only
+     warm thing on the page — which is what makes it read as the accent. */
+  --c-bg: 238 239 241;
+  --c-panel: 252 252 253;
+  --c-panel-2: 231 233 236;
+  --c-line: 208 212 218;
+  --c-ink: 24 26 29;
+  --c-muted: 92 98 107;
+  /* Darker than the dark-theme accent: #D08921 fails contrast on light grey. */
   --c-brand: 178 90 14;
   --c-brand-dim: 143 71 10;
   --c-brand-lite: 232 163 60;
   --c-brand-deep: 163 79 11;
-  --c-brand-ink: 255 248 238;
+  --c-brand-ink: 255 255 255;
   --c-danger: 190 32 32;
   --c-success: 21 128 61;
   --c-warning: 161 98 7;
   --scanline-opacity: 0.02;
   --grid-alpha: 0.1;
-  /* Neon over cream is smog. The glow is nearly off in the light theme. */
+  /* Neon over light grey is smog. The glow is nearly off in the light theme. */
   --neon-strength: 0.25;
 }
 
@@ -256,6 +257,8 @@ html[data-theme="light"] {
     pointer-events: none;
     mix-blend-mode: screen;
   }
+  /* screen over a light ground is invisible; multiply keeps the orbs readable
+     as a warm tint on the grey. */
   html[data-theme="light"] .hero-orb {
     mix-blend-mode: multiply;
     filter: blur(70px);
@@ -460,6 +463,66 @@ html[data-theme="light"] {
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  /* --- Admin type scale ---------------------------------------------------
+     The dashboard is worked in, not browsed: every step of the scale is one
+     notch larger inside `.admin-shell` (the admin layout, the login/recovery
+     screens and the toast stack) while the storefront keeps its own sizing.
+
+     Done here rather than by editing ~40 admin files, so a new admin screen
+     written with the normal `text-sm` picks the larger size up for free.
+
+     Two rules make this safe:
+       1. Values are absolute (rem/px), never `em` — a `text-xs` nested inside
+          a `text-lg` block would otherwise compound to an unplanned size.
+       2. Two-class specificity (0,2,0) already beats Tailwind's own utility,
+          so none of this needs !important and any `text-*` written directly
+          on an element still wins where it should. */
+  .admin-shell .text-\[9px\] {
+    font-size: 11px;
+  }
+  .admin-shell .text-\[10px\] {
+    font-size: 12px;
+  }
+  .admin-shell .text-\[11px\],
+  .admin-shell .eyebrow {
+    font-size: 13px;
+  }
+  .admin-shell .text-xs {
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+  }
+  .admin-shell .text-sm {
+    font-size: 1rem;
+    line-height: 1.5rem;
+  }
+  .admin-shell .text-base {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+  }
+  .admin-shell .text-lg {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
+  .admin-shell .text-xl {
+    font-size: 1.4375rem;
+    line-height: 1.875rem;
+  }
+  .admin-shell .text-2xl {
+    font-size: 1.75rem;
+    line-height: 2.25rem;
+  }
+  .admin-shell .text-3xl {
+    font-size: 2.125rem;
+    line-height: 2.5rem;
+  }
+  /* Controls whose size comes from the UA stylesheet (native selects, date
+     inputs) rather than from a text-* class. */
+  .admin-shell input,
+  .admin-shell select,
+  .admin-shell textarea {
+    font-size: inherit;
   }
 }
 

@@ -21,12 +21,21 @@ const Pixels = lazy(() => import("./Pixels"));
 const Settings = lazy(() => import("./Settings"));
 const Account = lazy(() => import("./Account"));
 const AdminNotFound = lazy(() => import("./AdminNotFound"));
+// Password recovery: only ever reached from the login screen or an e-mail
+// link, so it stays out of the dashboard's own chunk.
+const ForgotPassword = lazy(() => import("./ForgotPassword"));
+const ResetPassword = lazy(() => import("./ResetPassword"));
 
 export default function AdminApp() {
   return (
     <Routes>
-      {/* The only unauthenticated admin route. */}
+      {/* The unauthenticated admin routes: sign-in and password recovery.
+          `nouveau-mot-de-passe` is the redirect target of the recovery e-mail
+          and must sit OUTSIDE AdminLayout — the guard there would bounce a
+          visitor whose only credential is the link they just clicked. */}
       <Route path="login" element={<AdminLogin />} />
+      <Route path="mot-de-passe-oublie" element={<ForgotPassword />} />
+      <Route path="nouveau-mot-de-passe" element={<ResetPassword />} />
 
       <Route element={<AdminLayout />}>
         <Route index element={<Dashboard />} />

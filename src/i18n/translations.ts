@@ -433,6 +433,35 @@ export const translations = {
     accWrongPassword: "Mot de passe actuel incorrect.",
     accPasswordMismatch: "Les deux mots de passe ne correspondent pas.",
     accPasswordTooShort: "8 caractères minimum.",
+    accForgotTitle: "Mot de passe oublié",
+    accForgotText:
+      "Vous ne vous souvenez plus de votre mot de passe actuel ? Recevez un lien par e-mail pour en définir un nouveau, sans avoir à saisir l'ancien.",
+    accSendResetLink: "Envoyer le lien par e-mail",
+    accSendingResetLink: "Envoi…",
+    accResetLinkSent:
+      "Lien envoyé. Ouvrez votre boîte e-mail (pensez à vérifier les spams) et cliquez sur le lien.",
+    accResetLinkError: "Impossible d'envoyer le lien. Réessayez.",
+
+    // ---- admin: forgot / reset password ------------------------------------
+    fpLink: "Mot de passe oublié ?",
+    fpTitle: "Mot de passe oublié",
+    fpText:
+      "Entrez l'adresse e-mail de votre compte. Nous vous enverrons un lien pour définir un nouveau mot de passe.",
+    fpSend: "Envoyer le lien",
+    fpSending: "Envoi…",
+    fpSent:
+      "Si un compte existe pour cette adresse, un lien vient d'être envoyé. Consultez votre boîte e-mail (et les spams).",
+    fpError: "Impossible d'envoyer le lien. Réessayez.",
+    fpBackToLogin: "Retour à la connexion",
+    rpTitle: "Nouveau mot de passe",
+    rpText: "Choisissez un nouveau mot de passe pour votre compte.",
+    rpChecking: "Vérification du lien…",
+    rpSubmit: "Enregistrer le mot de passe",
+    rpDone: "Mot de passe modifié. Vous pouvez maintenant vous connecter.",
+    rpInvalidLink: "Ce lien est invalide ou a expiré. Demandez-en un nouveau.",
+    rpSameDevice:
+      "Ouvrez le lien dans le même navigateur que celui où vous l'avez demandé, ou demandez un nouveau lien depuis cet appareil.",
+    rpGoToLogin: "Aller à la connexion",
 
     // ---- admin: pixels -----------------------------------------------------
     pxTitle: "Pixels Meta",
@@ -1010,6 +1039,35 @@ export const translations = {
     accWrongPassword: "كلمة المرور الحالية غير صحيحة.",
     accPasswordMismatch: "كلمتا المرور غير متطابقتين.",
     accPasswordTooShort: "8 أحرف على الأقل.",
+    accForgotTitle: "نسيت كلمة المرور",
+    accForgotText:
+      "لا تتذكّر كلمة المرور الحالية؟ استلم رابطًا على بريدك الإلكتروني لتعيين كلمة مرور جديدة دون إدخال القديمة.",
+    accSendResetLink: "إرسال الرابط إلى بريدي",
+    accSendingResetLink: "جاري الإرسال…",
+    accResetLinkSent:
+      "تم إرسال الرابط. افتح بريدك الإلكتروني (تحقّق من الرسائل غير المرغوب فيها) واضغط على الرابط.",
+    accResetLinkError: "تعذّر إرسال الرابط. حاول مرة أخرى.",
+
+    // ---- admin: forgot / reset password ------------------------------------
+    fpLink: "نسيت كلمة المرور؟",
+    fpTitle: "نسيت كلمة المرور",
+    fpText:
+      "أدخل البريد الإلكتروني الخاص بحسابك. سنرسل لك رابطًا لتعيين كلمة مرور جديدة.",
+    fpSend: "إرسال الرابط",
+    fpSending: "جاري الإرسال…",
+    fpSent:
+      "إذا كان هناك حساب بهذا البريد، فقد تم إرسال رابط إليه. تحقّق من بريدك (والرسائل غير المرغوب فيها).",
+    fpError: "تعذّر إرسال الرابط. حاول مرة أخرى.",
+    fpBackToLogin: "العودة إلى تسجيل الدخول",
+    rpTitle: "كلمة مرور جديدة",
+    rpText: "اختر كلمة مرور جديدة لحسابك.",
+    rpChecking: "جاري التحقق من الرابط…",
+    rpSubmit: "حفظ كلمة المرور",
+    rpDone: "تم تغيير كلمة المرور. يمكنك الآن تسجيل الدخول.",
+    rpInvalidLink: "هذا الرابط غير صالح أو انتهت صلاحيته. اطلب رابطًا جديدًا.",
+    rpSameDevice:
+      "افتح الرابط في نفس المتصفح الذي طلبته منه، أو اطلب رابطًا جديدًا من هذا الجهاز.",
+    rpGoToLogin: "الذهاب إلى تسجيل الدخول",
 
     // ---- admin: pixels -----------------------------------------------------
     pxTitle: "بيكسل Meta",
