@@ -11,12 +11,20 @@ import type { LandingPage, LandingPagePayload } from "@/types/landing";
  * out of /shop, and the anon products policy hides those. The RPC exposes
  * exactly that one product rather than widening the policy.
  */
-export function useLandingPage(slug: string | undefined) {
+export function useLandingPage(slug: string | undefined, preview = false) {
   return useQuery({
-    queryKey: ["landing-page", slug],
+    queryKey: ["landing-page", slug, preview],
     enabled: !!slug,
     retry: 0,
     queryFn: async (): Promise<LandingPagePayload | null> => {
+      if (preview) {
+        const draft = await fetchDraftForPreview(slug!);
+        if (draft) return draft;
+        // Not signed in as an admin, or no such page — fall through to the
+        // public path so a ?preview=1 link that leaks still shows only what
+        // the public would see.
+      }
+
       const { data, error } = await supabase.rpc("get_landing_page", { p_slug: slug });
       if (error) throw error;
       if (!data) return null;
@@ -32,6 +40,39 @@ export function useLandingPage(slug: string | undefined) {
       };
     },
   });
+}
+
+/**
+ * Draft preview.
+ *
+ * get_landing_page() hard-filters `status = 'published'` — correct, an
+ * unfinished campaign must not be reachable — which left the client unable to
+ * look at a page before publishing it. This reads the row through the normal
+ * table policies instead, so RLS is the gate: an admin session sees the draft,
+ * anyone else gets nothing and the caller falls back to the public RPC. No
+ * policy is widened and no secret lives in the URL.
+ */
+async function fetchDraftForPreview(slug: string): Promise<LandingPagePayload | null> {
+  const { data, error } = await supabase
+    .from("landing_pages")
+    .select("*")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error || !data) return null;
+
+  const page = normalizeRow(data);
+
+  let product = null;
+  if (page.product_id) {
+    const { data: productRow } = await supabase
+      .from("products")
+      .select("*, product_images(*)")
+      .eq("id", page.product_id)
+      .maybeSingle();
+    product = productRow ? normalizeProduct(productRow) : null;
+  }
+
+  return { ...page, product };
 }
 
 export function useAdminLandingPages() {

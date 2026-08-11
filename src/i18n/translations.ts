@@ -184,6 +184,11 @@ export const translations = {
     errCartEmpty: "Votre panier est vide.",
     errProductUnavailable: "Un article n'est plus disponible. Actualisez la page.",
     errStock: "Stock insuffisant pour un des articles.",
+    errOptionRequired:
+      "Une option (taille, couleur…) n'a pas été choisie. Rouvrez le produit, faites votre choix et recommandez.",
+    errOptionUnavailable:
+      "Une option de votre panier n'existe plus. Rouvrez le produit et choisissez à nouveau.",
+    errOptionStock: "Cette option vient d'être épuisée. Choisissez-en une autre.",
     errWilayaDisabled: "Nous ne livrons pas encore dans cette wilaya.",
     errInvalidInput: "Certaines informations sont invalides. Vérifiez le formulaire.",
     errRateLimit: "Trop de commandes avec ce numéro. Réessayez plus tard.",
@@ -278,7 +283,9 @@ export const translations = {
     prodCompareAtHint: "Laissez vide s'il n'y a pas de promotion.",
     prodCategory: "Catégorie",
     prodNoCategory: "Sans catégorie",
-    prodStock: "Stock",
+    prodStock: "Stock total",
+    prodStockHint:
+      "Le plafond du produit, toutes options confondues. Le stock par taille / couleur / option se règle plus bas.",
     prodStyleCode: "Référence",
     prodStatus: "Statut",
     prodFeatured: "Mettre en avant",
@@ -433,6 +440,14 @@ export const translations = {
     accWrongPassword: "Mot de passe actuel incorrect.",
     accPasswordMismatch: "Les deux mots de passe ne correspondent pas.",
     accPasswordTooShort: "8 caractères minimum.",
+    chooseOptionsFirst: "Choisissez d'abord : {options}",
+    prodOptionValue: "Valeur",
+    prodOptionStock: "Stock",
+    prodOptionImage: "Photo",
+    prodStockUntracked: "—",
+    prodOptionStockHint:
+      "Laissez le stock vide pour ne pas le suivre sur cette option : elle se vend alors sur le stock total du produit. Avec un nombre, l'option a son propre stock, se décrémente à chaque commande et s'affiche « épuisée » à zéro.",
+
     accForgotTitle: "Mot de passe oublié",
     accForgotText:
       "Vous ne vous souvenez plus de votre mot de passe actuel ? Recevez un lien par e-mail pour en définir un nouveau, sans avoir à saisir l'ancien.",
@@ -523,7 +538,16 @@ export const translations = {
     lpMoveUp: "Monter",
     lpMoveDown: "Descendre",
     lpRemoveBlock: "Supprimer le bloc",
+    lpDuplicateBlock: "Dupliquer le bloc",
     lpToggleVisible: "Afficher / masquer",
+    lpNeedsProduct:
+      "Cette page contient un bloc « Commande » ou « Offre » mais aucun produit n'est lié. Ces blocs ne s'afficheront pas tant qu'un produit n'est pas choisi ci-dessus.",
+    lpPreviewBanner: "Aperçu — page non publiée, visible uniquement par vous.",
+    duplicateItem: "Dupliquer",
+    fieldAlt: "Description de l'image",
+    fieldAltHint:
+      "Texte lu par Google et par les lecteurs d'écran quand l'image ne s'affiche pas. Facultatif.",
+    fieldEndsAtHint: "Heure locale.",
     lpNoBlocks: "Aucun bloc. Ajoutez-en un pour commencer.",
     lpAppearance: "Apparence",
     lpAccent: "Couleur d'accent",
@@ -794,6 +818,10 @@ export const translations = {
     errCartEmpty: "سلتك فارغة.",
     errProductUnavailable: "أحد المنتجات لم يعد متوفرًا. أعد تحميل الصفحة.",
     errStock: "الكمية غير كافية لأحد المنتجات.",
+    errOptionRequired:
+      "لم يتم اختيار أحد الخيارات (المقاس، اللون…). افتح المنتج من جديد، اختر، ثم أعد الطلب.",
+    errOptionUnavailable: "أحد خيارات سلتك لم يعد موجودًا. افتح المنتج واختر من جديد.",
+    errOptionStock: "نفد هذا الخيار للتو. اختر خيارًا آخر.",
     errWilayaDisabled: "لا نوصل إلى هذه الولاية حاليًا.",
     errInvalidInput: "بعض المعلومات غير صحيحة. تحقق من النموذج.",
     errRateLimit: "طلبات كثيرة بهذا الرقم. حاول لاحقًا.",
@@ -887,7 +915,9 @@ export const translations = {
     prodCompareAtHint: "اتركه فارغًا إن لم يكن هناك تخفيض.",
     prodCategory: "الفئة",
     prodNoCategory: "بدون فئة",
-    prodStock: "المخزون",
+    prodStock: "المخزون الإجمالي",
+    prodStockHint:
+      "الحد الأقصى للمنتج بكل خياراته. أما مخزون كل مقاس / لون / خيار فيُضبط في الأسفل.",
     prodStyleCode: "المرجع",
     prodStatus: "الحالة",
     prodFeatured: "إبراز المنتج",
@@ -1039,6 +1069,14 @@ export const translations = {
     accWrongPassword: "كلمة المرور الحالية غير صحيحة.",
     accPasswordMismatch: "كلمتا المرور غير متطابقتين.",
     accPasswordTooShort: "8 أحرف على الأقل.",
+    chooseOptionsFirst: "اختر أولاً: {options}",
+    prodOptionValue: "القيمة",
+    prodOptionStock: "المخزون",
+    prodOptionImage: "صورة",
+    prodStockUntracked: "—",
+    prodOptionStockHint:
+      "اترك المخزون فارغًا لعدم تتبّعه في هذا الخيار: عندها يُباع من المخزون الإجمالي للمنتج. وبإدخال رقم يصبح للخيار مخزون خاص، ينقص مع كل طلب ويظهر «نفد» عند الصفر.",
+
     accForgotTitle: "نسيت كلمة المرور",
     accForgotText:
       "لا تتذكّر كلمة المرور الحالية؟ استلم رابطًا على بريدك الإلكتروني لتعيين كلمة مرور جديدة دون إدخال القديمة.",
@@ -1128,7 +1166,16 @@ export const translations = {
     lpMoveUp: "أعلى",
     lpMoveDown: "أسفل",
     lpRemoveBlock: "حذف الكتلة",
+    lpDuplicateBlock: "نسخ الكتلة",
     lpToggleVisible: "إظهار / إخفاء",
+    lpNeedsProduct:
+      "هذه الصفحة تحتوي على كتلة «طلب» أو «عرض» لكن لا يوجد منتج مرتبط. لن تظهر هذه الكتل حتى تختار منتجًا أعلاه.",
+    lpPreviewBanner: "معاينة — صفحة غير منشورة، تظهر لك وحدك.",
+    duplicateItem: "نسخ",
+    fieldAlt: "وصف الصورة",
+    fieldAltHint:
+      "نص يقرأه جوجل وقارئات الشاشة عندما لا تظهر الصورة. اختياري.",
+    fieldEndsAtHint: "بالتوقيت المحلي.",
     lpNoBlocks: "لا توجد كتل. أضف واحدة للبدء.",
     lpAppearance: "المظهر",
     lpAccent: "لون التمييز",

@@ -5,7 +5,12 @@ import { Field, Input, Select } from "@/components/ui/Form";
 import { ImageUploader } from "./ImageUploader";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { sanitizeOffers } from "@/lib/offers";
-import type { ProductColor, ProductVariantGroup, QuantityOffer } from "@/types/db";
+import type {
+  ProductColor,
+  ProductVariantGroup,
+  ProductVariantValue,
+  QuantityOffer,
+} from "@/types/db";
 
 /* -------------------------------------------------------------------------- */
 /* Chip list — sizes, variant values                                          */
@@ -79,6 +84,127 @@ export function ChipListEditor({
 }
 
 /* -------------------------------------------------------------------------- */
+/* Option list — sizes and custom variant values, each with its own stock      */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * Replaces the plain chip list for anything the client tracks stock on.
+ *
+ * Leaving the stock box EMPTY means "don't track this option" — it then sells
+ * against the product's own stock, which is exactly how every product created
+ * before per-option stock existed keeps behaving. A number makes it a pool of
+ * its own that place_order() checks and decrements.
+ */
+export function OptionListEditor({
+  values,
+  onChange,
+  withImages,
+  placeholder,
+}: {
+  values: ProductVariantValue[];
+  onChange: (next: ProductVariantValue[]) => void;
+  /** Custom variant values offer a photo; sizes do not. */
+  withImages?: boolean;
+  placeholder?: string;
+}) {
+  const { t } = useLanguage();
+  const [draft, setDraft] = useState("");
+
+  const commit = () => {
+    const value = draft.trim();
+    // Duplicates and empty drafts are silently ignored.
+    if (!value || values.some((entry) => entry.value === value)) {
+      setDraft("");
+      return;
+    }
+    onChange([...values, { value, image_url: null, stock: null }]);
+    setDraft("");
+  };
+
+  const update = (index: number, patch: Partial<ProductVariantValue>) =>
+    onChange(values.map((entry, i) => (i === index ? { ...entry, ...patch } : entry)));
+
+  return (
+    <div className="space-y-2">
+      {values.map((entry, index) => (
+        <div
+          key={index}
+          className="flex flex-wrap items-end gap-2 rounded-lg border border-line bg-panel-2 p-2"
+        >
+          <div className="min-w-32 flex-1">
+            <Field label={t("prodOptionValue")}>
+              <Input
+                value={entry.value}
+                onChange={(event) => update(index, { value: event.target.value })}
+              />
+            </Field>
+          </div>
+
+          <div className="w-28">
+            <Field label={t("prodOptionStock")}>
+              <Input
+                type="number"
+                min={0}
+                dir="ltr"
+                placeholder={t("prodStockUntracked")}
+                value={entry.stock ?? ""}
+                onChange={(event) =>
+                  update(index, {
+                    stock:
+                      event.target.value === ""
+                        ? null
+                        : Math.max(0, Math.floor(Number(event.target.value) || 0)),
+                  })
+                }
+              />
+            </Field>
+          </div>
+
+          {withImages && (
+            <ImageUploader
+              compact
+              label={t("prodOptionImage")}
+              prefix="variants/"
+              value={entry.image_url ?? null}
+              onChange={(url) => update(index, { image_url: url })}
+            />
+          )}
+
+          <button
+            type="button"
+            onClick={() => onChange(values.filter((_, i) => i !== index))}
+            aria-label={t("delete")}
+            className="mb-1 h-11 rounded-lg border border-line px-3 text-muted transition-colors hover:border-danger hover:text-danger"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      ))}
+
+      <div className="flex gap-2">
+        <Input
+          value={draft}
+          placeholder={placeholder}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              commit();
+            }
+          }}
+        />
+        <Button variant="secondary" onClick={commit} className="shrink-0">
+          <Plus size={14} />
+          {t("prodAddValue")}
+        </Button>
+      </div>
+
+      <p className="text-xs text-muted">{t("prodOptionStockHint")}</p>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* Colours (with optional per-swatch photo)                                    */
 /* -------------------------------------------------------------------------- */
 
@@ -99,7 +225,7 @@ export function ColorsEditor({
       {colors.map((color, index) => (
         <div
           key={index}
-          className="grid gap-3 rounded-lg border border-line bg-panel-2 p-3 sm:grid-cols-[auto_1fr_1fr_auto_auto] sm:items-end"
+          className="grid gap-3 rounded-lg border border-line bg-panel-2 p-3 sm:grid-cols-[auto_1fr_1fr_auto_auto_auto] sm:items-end"
         >
           <Field label={t("prodColorHex")}>
             <input
@@ -124,6 +250,28 @@ export function ColorsEditor({
               onChange={(event) => update(index, { label_ar: event.target.value })}
             />
           </Field>
+
+          {/* Empty = untracked: this colour sells against the product's own
+              stock. A number gives it a pool place_order() checks separately. */}
+          <div className="w-28">
+            <Field label={t("prodOptionStock")}>
+              <Input
+                type="number"
+                min={0}
+                dir="ltr"
+                placeholder={t("prodStockUntracked")}
+                value={color.stock ?? ""}
+                onChange={(event) =>
+                  update(index, {
+                    stock:
+                      event.target.value === ""
+                        ? null
+                        : Math.max(0, Math.floor(Number(event.target.value) || 0)),
+                  })
+                }
+              />
+            </Field>
+          </div>
 
           {/* An optional photo: picking this swatch jumps the product gallery
               to it. Colours without one simply leave the gallery alone. */}
@@ -151,7 +299,7 @@ export function ColorsEditor({
         onClick={() =>
           onChange([
             ...colors,
-            { hex: "#000000", label_fr: "", label_ar: "", image_url: null },
+            { hex: "#000000", label_fr: "", label_ar: "", image_url: null, stock: null },
           ])
         }
       >
@@ -207,7 +355,8 @@ export function CustomVariantsEditor({
           </div>
 
           <Field label={t("prodVariantValues")}>
-            <ChipListEditor
+            <OptionListEditor
+              withImages
               values={group.values}
               onChange={(values) => update(index, { values })}
             />

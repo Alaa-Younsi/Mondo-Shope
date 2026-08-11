@@ -14,6 +14,22 @@ export type OrderStatus =
   | "cancelled";
 export type DeliveryType = "home" | "office";
 
+/**
+ * Per-option stock.
+ *
+ * `null` means "not tracked on this option" — the product-level `stock` is the
+ * only limit, which is how every row written before 0011 behaves. A number is a
+ * pool of its own: place_order() checks it, decrements it, and the storefront
+ * greys the option out at 0.
+ *
+ * The pools are INDEPENDENT per axis, not a combination matrix. Buying a
+ * "Red / M" decrements Red by one and M by one; there is deliberately no
+ * Red-M cell. See README — with two tracked axes this can oversell one exact
+ * pairing, which is the accepted trade for an admin form the client will
+ * actually fill in.
+ */
+export type OptionStock = number | null;
+
 /** A colour swatch. `image_url` is optional: when present, picking the swatch
  *  jumps the product gallery to that photo. */
 export interface ProductColor {
@@ -22,13 +38,28 @@ export interface ProductColor {
   label_en?: string;
   hex: string;
   image_url?: string | null;
+  stock?: OptionStock;
+}
+
+/** A size. Rows written before 0011 hold a bare string; normalizeProduct lifts
+ *  those into this shape so the rest of the app only ever sees objects. */
+export interface ProductSize {
+  value: string;
+  stock?: OptionStock;
+}
+
+/** One selectable value inside a custom variant axis. */
+export interface ProductVariantValue {
+  value: string;
+  image_url?: string | null;
+  stock?: OptionStock;
 }
 
 /** A custom variant axis beyond the built-in colour/size pickers. */
 export interface ProductVariantGroup {
   name_fr: string;
   name_ar: string;
-  values: string[];
+  values: ProductVariantValue[];
 }
 
 /** The shopper's pick from a custom variant group, snapshotted onto the order. */
@@ -77,7 +108,7 @@ export interface Product {
   stock: number;
   style_code: string | null;
   colors: ProductColor[];
-  sizes: string[];
+  sizes: ProductSize[];
   variants: ProductVariantGroup[];
   quantity_offers: QuantityOffer[];
   video_url: string | null;

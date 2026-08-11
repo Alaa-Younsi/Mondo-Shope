@@ -113,13 +113,52 @@ export function useRelatedProducts(categoryId: string | null, excludeId: string 
  * column, and `product.variants.map(...)` then crashes the page. Every consumer
  * can trust these are arrays.
  */
+/**
+ * Per-option stock (0011) changed `sizes` from ["S","M"] to
+ * [{value,stock}] and a variant group's `values` the same way. Every product
+ * row written before that migration still holds the old shape, and a
+ * hand-edited jsonb can hold anything at all — so both are lifted here rather
+ * than migrated destructively in SQL. `stock: null` means untracked, which is
+ * exactly how those legacy rows should behave.
+ */
+function toOptionValue(entry: unknown): { value: string; image_url: string | null; stock: number | null } {
+  if (typeof entry === "string") return { value: entry, image_url: null, stock: null };
+  const option = (entry ?? {}) as { value?: unknown; image_url?: unknown; stock?: unknown };
+  return {
+    value: typeof option.value === "string" ? option.value : "",
+    image_url: typeof option.image_url === "string" ? option.image_url : null,
+    stock: typeof option.stock === "number" && Number.isFinite(option.stock)
+      ? Math.max(0, Math.floor(option.stock))
+      : null,
+  };
+}
+
 function normalizeProduct(row: unknown): Product {
   const product = row as Product;
   return {
     ...product,
-    colors: Array.isArray(product.colors) ? product.colors : [],
-    sizes: Array.isArray(product.sizes) ? product.sizes : [],
-    variants: Array.isArray(product.variants) ? product.variants : [],
+    colors: Array.isArray(product.colors)
+      ? product.colors.map((color) => ({
+          ...color,
+          stock: toOptionValue({ stock: color?.stock }).stock,
+        }))
+      : [],
+    sizes: Array.isArray(product.sizes)
+      ? product.sizes
+          .map((size) => {
+            const { value, stock } = toOptionValue(size);
+            return { value, stock };
+          })
+          .filter((size) => size.value !== "")
+      : [],
+    variants: Array.isArray(product.variants)
+      ? product.variants.map((group) => ({
+          ...group,
+          values: Array.isArray(group?.values)
+            ? group.values.map(toOptionValue).filter((entry) => entry.value !== "")
+            : [],
+        }))
+      : [],
     quantity_offers: Array.isArray(product.quantity_offers) ? product.quantity_offers : [],
     details_fr: Array.isArray(product.details_fr) ? product.details_fr : [],
     details_ar: Array.isArray(product.details_ar) ? product.details_ar : [],

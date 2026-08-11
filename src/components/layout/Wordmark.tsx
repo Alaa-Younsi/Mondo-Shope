@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useTheme } from "@/theme/ThemeProvider";
 import { cn } from "@/lib/utils";
 
 /**
@@ -10,6 +11,21 @@ import { cn } from "@/lib/utils";
  */
 const RATIO = 1048 / 428;
 
+/**
+ * TWO FILES, one per theme — not a style choice, a contrast one.
+ *
+ * The original logo is two light marks (#FFAB40 "MONDO", #EBEFF2 "SHOPE") drawn
+ * for the near-black dark theme. On the light theme the pale half vanishes, and
+ * there is no background that fixes it: anything dark enough to show #EBEFF2 at
+ * 3:1 drops dark body text below 4.5:1, so the two requirements never overlap.
+ * logo-light.png re-inks both halves for parchment (scripts/make-light-logo.py)
+ * and is regenerated from logo.png whenever that changes.
+ */
+const LOGO_SRC: Record<"dark" | "light", string> = {
+  dark: "/logo.png",
+  light: "/logo-light.png",
+};
+
 export function Wordmark({
   className,
   to = "/",
@@ -19,6 +35,7 @@ export function Wordmark({
   to?: string;
   size?: "sm" | "md";
 }) {
+  const { theme } = useTheme();
   const height = size === "sm" ? 32 : 40;
 
   return (
@@ -28,7 +45,7 @@ export function Wordmark({
       aria-label="Mondo Shope"
     >
       <img
-        src="/logo.png"
+        src={LOGO_SRC[theme]}
         alt="Mondo Shope"
         width={Math.round(height * RATIO)}
         height={height}

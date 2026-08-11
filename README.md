@@ -101,6 +101,62 @@ Read `supabase/migrations/0002_rls.sql` before changing anything here.
   whoever opens the file.
 - Cancelling an order restocks automatically (trigger on the transition into
   `cancelled`). **Deleting an order does not.**
+- Landing-page **draft preview** (`/lp/<slug>?preview=1`) is gated by RLS, not by
+  the query string: it reads `landing_pages` through the normal table policies,
+  so an admin session resolves the draft and everyone else falls through to the
+  published-only RPC. The URL carries no token and grants nothing.
+- The landing **video block** rebuilds its embed URL from a matched YouTube /
+  Vimeo id (`src/lib/video.ts`) rather than passing the pasted string to an
+  `<iframe src>`, and rejects any scheme other than http(s).
+- `vercel.json` sets `base-uri` / `object-src` / `frame-ancestors` /
+  `form-action` via CSP. `script-src` and `connect-src` are deliberately absent:
+  the Meta Pixel bootstraps inline and its origins would have to be maintained
+  by hand, so a stale list would break tracking or checkout. Adding them is a
+  worthwhile follow-up *with* a staging deploy to test against.
+
+**Residual risk, accepted:** `get_order_by_number()` is unauthenticated by
+design (guests must reach their confirmation page) and returns name, wilaya,
+city and items for a known order number. The number is
+`MS-YYYYMMDD-XXXXX`, so a determined attacker has ~1M guesses per day to
+enumerate one day's orders. Nothing sensitive enough to lose sleep over
+(no phone, address or notes are returned) but if you want it closed, widen the
+random suffix in `place_order()` from 5 to 8 characters — that is a targeted
+one-line change to a function the migration comments warn against re-declaring
+casually, so do it deliberately and test order placement afterwards.
+
+---
+
+## Variants and stock
+
+A product has three variant axes, all optional, all editable per product:
+
+| Axis | Shape | Per-option photo | Per-option stock |
+| --- | --- | --- | --- |
+| Colours | `[{ hex, label_fr, label_ar, image_url, stock }]` | yes — picking the swatch jumps the gallery to it | yes |
+| Sizes | `[{ value, stock }]` | no | yes |
+| Custom | `[{ name_fr, name_ar, values: [{ value, image_url, stock }] }]` | yes | yes |
+
+**`stock` empty = untracked.** That option then sells against the product's own
+`stock`, which is exactly how every product written before `0011` behaves —
+nothing was rewritten in place, and both shapes (`["S","M"]` and
+`[{value:"S"}]`) are read correctly by `normalizeProduct` and by `place_order()`.
+
+**A number makes it its own pool.** `place_order()` checks it, decrements it on
+purchase, and the restock trigger puts it back when an order is cancelled. The
+storefront greys the option out and strikes it through at zero, the quantity
+stepper is capped by the smallest selected pool, and Add to cart / the landing
+order form stay disabled until every axis with stock left has been answered.
+
+**Pools are independent per axis, not a matrix.** Buying one "Red / M"
+decrements Red by one *and* M by one; there is no Red-M cell. With two tracked
+axes this can oversell one exact pairing — 10 Red and 8 M in stock but only 3
+real Red-M. That is the deliberate trade for an admin form with one box per
+option rather than a grid that grows multiplicatively. If a product ever needs
+true combination stock, model it as separate products.
+
+`place_order()` also now **rejects an unanswered or unknown option** rather than
+storing whatever string the client sent, so an order can no longer arrive for a
+size the product does not offer.
 
 ---
 
@@ -145,7 +201,14 @@ list on a scoped pixel means "every page of that kind", not "no pages".
 | Script | Purpose |
 | --- | --- |
 | `python scripts/prepare-logo.py` | Crops the supplied `logo.png` (it ships with a 3px frame and wide margins) into the transparent `public/logo.png` the site uses. |
+| `python scripts/make-light-logo.py` | Re-inks `public/logo.png` into `public/logo-light.png` for the light theme. **Re-run this whenever `public/logo.png` changes**, or light mode keeps showing the old wordmark. |
 | `powershell -ExecutionPolicy Bypass -File scripts/gen-og-image.ps1` | Generates the 1200×630 `public/og-image.png` share card. |
+
+The logo is two *light* marks — `#FFAB40` "MONDO" over `#EBEFF2` "SHOPE" — drawn
+for the near-black dark theme, so the pale half vanishes on any light ground.
+There is no palette that fixes it: every background dark enough to show
+`#EBEFF2` at 3:1 drops dark body text below 4.5:1. Hence two files, picked by
+theme in `Wordmark.tsx`.
 
 Both are one-off; neither is wired into the build. Once real product photos
 exist, prefer replacing the OG card with a straight 1200×630 crop of the best

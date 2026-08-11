@@ -6,10 +6,10 @@ import { AdminPage, Panel } from "@/components/admin/AdminPage";
 import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import { MultiImageUploader } from "@/components/admin/ImageUploader";
 import {
-  ChipListEditor,
   ColorsEditor,
   CustomVariantsEditor,
   OffersEditor,
+  OptionListEditor,
 } from "@/components/admin/Editors";
 import { Button } from "@/components/ui/Button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/Form";
@@ -190,10 +190,16 @@ export default function ProductForm() {
         quantity_offers: sanitizeOffers(form.quantity_offers),
         // A half-filled group the admin abandoned must not reach the storefront
         // as a nameless or empty picker.
-        variants: form.variants.filter(
-          (group) => group.name_fr.trim() && group.values.length > 0,
-        ),
+        variants: form.variants
+          .map((group) => ({
+            ...group,
+            values: group.values.filter((entry) => entry.value.trim()),
+          }))
+          .filter((group) => group.name_fr.trim() && group.values.length > 0),
         colors: form.colors.filter((color) => color.hex),
+        // An option with a blank label is unpickable on the storefront and
+        // unmatchable by place_order().
+        sizes: form.sizes.filter((size) => size.value.trim()),
       };
 
       let productId = id;
@@ -369,7 +375,7 @@ export default function ProductForm() {
                 }
               />
             </Field>
-            <Field label={t("prodStock")}>
+            <Field label={t("prodStock")} hint={t("prodStockHint")}>
               <Input
                 type="number"
                 min={0}
@@ -461,7 +467,12 @@ export default function ProductForm() {
         </Panel>
 
         <Panel title={t("prodSizes")}>
-          <ChipListEditor values={form.sizes} onChange={(sizes) => patch({ sizes })} />
+          <OptionListEditor
+            values={form.sizes.map((size) => ({ ...size, image_url: null }))}
+            onChange={(values) =>
+              patch({ sizes: values.map(({ value, stock }) => ({ value, stock })) })
+            }
+          />
         </Panel>
 
         <Panel title={t("prodVariants")}>

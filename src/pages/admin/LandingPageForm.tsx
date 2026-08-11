@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Copy,
   Eye,
   EyeOff,
   Plus,
@@ -32,7 +34,7 @@ import {
   createBlock,
   defaultBlocks,
 } from "@/lib/landing";
-import { cn, slugify } from "@/lib/utils";
+import { cn, newId, slugify } from "@/lib/utils";
 import type { LandingBlock, LandingBlockType, LandingPage } from "@/types/landing";
 import type { Product } from "@/types/db";
 
@@ -103,6 +105,17 @@ export default function LandingPageForm() {
   const [slugError, setSlugError] = useState<"required" | "taken" | null>(null);
   const [saving, setSaving] = useState(false);
 
+  /*
+   * Hydrate ONCE per page id.
+   *
+   * Without the guard this effect re-ran on every new `loaded` identity — and
+   * React Query refetches on reconnect by default. A client editing a long page
+   * on a phone whose signal drops for a moment would have had the whole
+   * in-progress page silently replaced by the last saved version.
+   */
+  const hydratedId = useRef<string | null>(null);
+  const [baseline, setBaseline] = useState<string>(() => JSON.stringify(EMPTY));
+
   useEffect(() => {
     if (isNew) return;
     if (isError) {
@@ -116,8 +129,26 @@ export default function LandingPageForm() {
       setLoadFailed(true);
       return;
     }
-    setForm(toFormState(loaded));
+    if (hydratedId.current === loaded.id) return;
+    hydratedId.current = loaded.id;
+    const next = toFormState(loaded);
+    setForm(next);
+    setBaseline(JSON.stringify(next));
   }, [isNew, isError, isLoading, loaded]);
+
+  const dirty = JSON.stringify(form) !== baseline;
+
+  // Covers a tab close / reload / back button. In-app navigation still goes
+  // through the Back button below, which is a deliberate click.
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
 
   const patch = (values: Partial<LandingFormState>) =>
     setForm((current) => ({ ...current, ...values }));
@@ -139,6 +170,28 @@ export default function LandingPageForm() {
     setOpenBlock(block.id);
     setAddOpen(false);
   };
+
+  /** Copy sits directly under its original, with a fresh id. */
+  const duplicateBlock = (index: number) => {
+    const source = form.blocks[index];
+    const copy = { ...source, id: newId() } as LandingBlock;
+    const next = [...form.blocks];
+    next.splice(index + 1, 0, copy);
+    setBlocks(next);
+    setOpenBlock(copy.id);
+  };
+
+  /*
+   * The `offer` and `order_form` blocks render NOTHING when the page has no
+   * product linked — they read price and stock off it. Silently dropping the
+   * only block that takes money is the worst possible failure mode, so say so
+   * in the editor rather than letting the client publish a dead page.
+   */
+  const needsProduct =
+    !form.product_id &&
+    form.blocks.some(
+      (block) => block.visible && (block.type === "order_form" || block.type === "offer"),
+    );
 
   const onSave = async () => {
     const slug = slugify(form.slug || form.title_fr || form.title_ar);
@@ -177,6 +230,7 @@ export default function LandingPageForm() {
           return;
         }
         toast.success(t("adminSaved"));
+        setBaseline(JSON.stringify(payload));
         invalidateLandingPages(queryClient);
         navigate(`/admin/pages/${(data as { id: string }).id}`, { replace: true });
         return;
@@ -189,6 +243,9 @@ export default function LandingPageForm() {
       }
 
       toast.success(t("adminSaved"));
+      // The form now matches the server, so the unsaved-changes guard stands
+      // down until the next edit.
+      setBaseline(JSON.stringify(payload));
       invalidateLandingPages(queryClient);
       queryClient.invalidateQueries({ queryKey: ["admin-landing-page", id] });
     } finally {
@@ -216,11 +273,22 @@ export default function LandingPageForm() {
             <ArrowLeft size={15} className="rtl:rotate-180" />
             {t("back")}
           </Button>
-          {!isNew && form.status === "published" && (
+          {/* Also offered for drafts — that is when a preview is actually
+              needed. ?preview=1 resolves through RLS, so it shows the draft
+              only to an admin session and 404s to everyone else. */}
+          {!isNew && (
             <Button
               variant="outline"
               size="sm"
-              onClick={() => window.open(`/lp/${form.slug}`, "_blank", "noopener")}
+              onClick={() =>
+                window.open(
+                  form.status === "published"
+                    ? `/lp/${slugify(form.slug)}`
+                    : `/lp/${slugify(form.slug)}?preview=1`,
+                  "_blank",
+                  "noopener,noreferrer",
+                )
+              }
             >
               <Eye size={15} />
               {t("preview")}
@@ -320,6 +388,16 @@ export default function LandingPageForm() {
             </div>
           )}
 
+          {needsProduct && (
+            <p
+              role="alert"
+              className="mb-4 flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 p-3 text-sm text-warning"
+            >
+              <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+              {t("lpNeedsProduct")}
+            </p>
+          )}
+
           {form.blocks.length === 0 ? (
             <p className="py-6 text-center text-sm text-muted">{t("lpNoBlocks")}</p>
           ) : (
@@ -381,6 +459,14 @@ export default function LandingPageForm() {
                         className="rounded p-2 text-muted transition-colors hover:text-ink"
                       >
                         {block.visible ? <Eye size={15} /> : <EyeOff size={15} />}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => duplicateBlock(index)}
+                        aria-label={t("lpDuplicateBlock")}
+                        className="rounded p-2 text-muted transition-colors hover:text-ink"
+                      >
+                        <Copy size={15} />
                       </button>
                       <button
                         type="button"

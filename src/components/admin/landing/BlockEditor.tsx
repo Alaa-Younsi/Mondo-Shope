@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
-import { Plus, X } from "lucide-react";
+import { ChevronDown, ChevronUp, Copy, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/Form";
 import { ImageUploader, MultiImageUploader } from "@/components/admin/ImageUploader";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { BLOCK_ICON_CHOICES } from "@/lib/landing";
+import { BLOCK_ICON_CHOICES, isoToLocalInput, localInputToIso } from "@/lib/landing";
+import { resolveIcon } from "@/lib/icons";
+import { cn } from "@/lib/utils";
 import type { CtaTarget, LandingBlock } from "@/types/landing";
 import type { TranslationKey } from "@/i18n/translations";
 
@@ -65,7 +67,16 @@ function CtaTargetField({
   );
 }
 
-/** Repeatable item list with add / remove, shared by every list-shaped block. */
+/** Move `from` to `to`, or return the list untouched when `to` is off the end. */
+function swap<T>(items: T[], from: number, to: number): T[] {
+  if (to < 0 || to >= items.length) return items;
+  const next = [...items];
+  const [moved] = next.splice(from, 1);
+  next.splice(to, 0, moved);
+  return next;
+}
+
+/** Repeatable item list with add / remove / reorder, shared by every list block. */
 function ItemList<T>({
   items,
   onChange,
@@ -87,14 +98,46 @@ function ItemList<T>({
         <div key={index} className="rounded-lg border border-line bg-panel-2 p-3">
           <div className="mb-2 flex items-center justify-between">
             <span className="font-mono text-[11px] text-muted">#{index + 1}</span>
-            <button
-              type="button"
-              onClick={() => onChange(items.filter((_, i) => i !== index))}
-              aria-label={t("removeItem2")}
-              className="rounded p-1 text-muted transition-colors hover:text-danger"
-            >
-              <X size={14} />
-            </button>
+            <div className="flex items-center gap-0.5">
+              {/* Without these, reordering a FAQ or a bullet list means deleting
+                  every item below it and retyping them. */}
+              <button
+                type="button"
+                onClick={() => onChange(swap(items, index, index - 1))}
+                disabled={index === 0}
+                aria-label={t("lpMoveUp")}
+                className="rounded p-1 text-muted transition-colors hover:text-ink disabled:opacity-30"
+              >
+                <ChevronUp size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange(swap(items, index, index + 1))}
+                disabled={index === items.length - 1}
+                aria-label={t("lpMoveDown")}
+                className="rounded p-1 text-muted transition-colors hover:text-ink disabled:opacity-30"
+              >
+                <ChevronDown size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  onChange([...items.slice(0, index + 1), { ...item }, ...items.slice(index + 1)])
+                }
+                aria-label={t("duplicateItem")}
+                className="rounded p-1 text-muted transition-colors hover:text-ink"
+              >
+                <Copy size={13} />
+              </button>
+              <button
+                type="button"
+                onClick={() => onChange(items.filter((_, i) => i !== index))}
+                aria-label={t("removeItem2")}
+                className="rounded p-1 text-muted transition-colors hover:text-danger"
+              >
+                <X size={14} />
+              </button>
+            </div>
           </div>
           {render(
             item,
@@ -123,13 +166,32 @@ function IconField({
   const { t } = useLanguage();
   return (
     <Field label={t("fieldIcon")}>
-      <Select value={value} onChange={(event) => onChange(event.target.value)}>
-        {BLOCK_ICON_CHOICES.map((name) => (
-          <option key={name} value={name}>
-            {name}
-          </option>
-        ))}
-      </Select>
+      {/* A <select> of names ("BadgeCheck", "PackageCheck") is unreadable to a
+          shop owner picking a picture. Show the actual glyphs. */}
+      <div className="flex flex-wrap gap-1.5">
+        {BLOCK_ICON_CHOICES.map((name) => {
+          const Icon = resolveIcon(name);
+          const active = value === name;
+          return (
+            <button
+              key={name}
+              type="button"
+              title={name}
+              aria-label={name}
+              aria-pressed={active}
+              onClick={() => onChange(name)}
+              className={cn(
+                "flex h-10 w-10 items-center justify-center rounded-lg border transition-colors",
+                active
+                  ? "border-brand bg-brand/10 text-brand"
+                  : "border-line bg-panel text-muted hover:border-brand/50 hover:text-ink",
+              )}
+            >
+              <Icon size={17} />
+            </button>
+          );
+        })}
+      </div>
     </Field>
   );
 }
@@ -298,9 +360,44 @@ export function BlockEditor({
           />
           <MultiImageUploader
             urls={data.images.map((image) => image.url)}
-            onChange={(urls) => set({ images: urls.map((url) => ({ url, alt: "" })) })}
+            // Re-key the existing alts by url instead of rebuilding the list
+            // with alt:"" — that dropped every alt the client had typed as soon
+            // as they added or removed one photo.
+            onChange={(urls) => {
+              const alts = new Map(data.images.map((image) => [image.url, image.alt]));
+              set({ images: urls.map((url) => ({ url, alt: alts.get(url) ?? "" })) });
+            }}
             prefix="landing/"
           />
+
+          {data.images.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs text-muted">{t("fieldAltHint")}</p>
+              {data.images.map((image, index) => (
+                <div key={image.url} className="flex items-center gap-3">
+                  <img
+                    src={image.url}
+                    alt=""
+                    width={40}
+                    height={40}
+                    className="h-10 w-10 shrink-0 rounded-lg border border-line object-cover"
+                  />
+                  <Input
+                    aria-label={`${t("fieldAlt")} ${index + 1}`}
+                    placeholder={t("fieldAlt")}
+                    value={image.alt}
+                    onChange={(event) =>
+                      set({
+                        images: data.images.map((entry, i) =>
+                          i === index ? { ...entry, alt: event.target.value } : entry,
+                        ),
+                      })
+                    }
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       );
     }
@@ -552,18 +649,12 @@ export function BlockEditor({
             onFr={(title_fr) => set({ title_fr })}
             onAr={(title_ar) => set({ title_ar })}
           />
-          <Field label={t("fieldEndsAt")}>
+          <Field label={t("fieldEndsAt")} hint={t("fieldEndsAtHint")}>
             <Input
               type="datetime-local"
               dir="ltr"
-              value={data.ends_at ? data.ends_at.slice(0, 16) : ""}
-              onChange={(event) =>
-                set({
-                  ends_at: event.target.value
-                    ? new Date(event.target.value).toISOString()
-                    : null,
-                })
-              }
+              value={isoToLocalInput(data.ends_at)}
+              onChange={(event) => set({ ends_at: localInputToIso(event.target.value) })}
             />
           </Field>
           <Pair

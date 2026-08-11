@@ -1,15 +1,23 @@
 import { Check } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { isOptionAvailable } from "@/lib/variantStock";
 import { cn, pick } from "@/lib/utils";
-import type { ProductColor, ProductVariantGroup } from "@/types/db";
+import type { ProductColor, ProductSize, ProductVariantGroup } from "@/types/db";
 
 interface ColorPickerProps {
   colors: ProductColor[];
   selectedHex: string | null;
   onSelect: (hex: string, label: string) => void;
+  /** Product-level stock, the fallback for any option with no pool of its own. */
+  productStock: number;
 }
 
-export function ColorPicker({ colors, selectedHex, onSelect }: ColorPickerProps) {
+export function ColorPicker({
+  colors,
+  selectedHex,
+  onSelect,
+  productStock,
+}: ColorPickerProps) {
   const { t, lang } = useLanguage();
   if (colors.length === 0) return null;
 
@@ -25,24 +33,38 @@ export function ColorPicker({ colors, selectedHex, onSelect }: ColorPickerProps)
         {colors.map((color) => {
           const label = pick(lang, color, "label");
           const isActive = color.hex === selectedHex;
+          const available = isOptionAvailable(color, productStock);
           return (
             <button
               key={color.hex}
               type="button"
+              disabled={!available}
               onClick={() => onSelect(color.hex, label)}
-              title={label}
-              aria-label={label}
+              title={available ? label : `${label} — ${t("outOfStock")}`}
+              aria-label={available ? label : `${label} — ${t("outOfStock")}`}
               aria-pressed={isActive}
               className={cn(
                 "relative flex h-11 w-11 items-center justify-center rounded-lg border-2 transition-transform",
                 isActive ? "border-brand scale-105" : "border-line hover:border-muted",
+                // Struck through rather than hidden: a shopper who came for
+                // that colour needs to see it exists and is gone, not wonder
+                // whether they misremembered the ad.
+                !available && "cursor-not-allowed opacity-40",
               )}
             >
               <span
                 className="h-7 w-7 rounded-md border border-black/20"
                 style={{ backgroundColor: color.hex }}
               />
-              {isActive && (
+              {!available && (
+                <span
+                  aria-hidden
+                  className="absolute inset-0 flex items-center justify-center"
+                >
+                  <span className="h-[2px] w-9 rotate-45 bg-danger" />
+                </span>
+              )}
+              {isActive && available && (
                 <Check
                   size={12}
                   className="absolute -end-1 -top-1 rounded-full bg-brand p-0.5 text-brand-ink"
@@ -57,12 +79,13 @@ export function ColorPicker({ colors, selectedHex, onSelect }: ColorPickerProps)
 }
 
 interface SizePickerProps {
-  sizes: string[];
+  sizes: ProductSize[];
   selected: string | null;
   onSelect: (size: string) => void;
+  productStock: number;
 }
 
-export function SizePicker({ sizes, selected, onSelect }: SizePickerProps) {
+export function SizePicker({ sizes, selected, onSelect, productStock }: SizePickerProps) {
   const { t } = useLanguage();
   if (sizes.length === 0) return null;
 
@@ -72,22 +95,29 @@ export function SizePicker({ sizes, selected, onSelect }: SizePickerProps) {
         {t("chooseSize")}
       </p>
       <div className="flex flex-wrap gap-2">
-        {sizes.map((size) => (
-          <button
-            key={size}
-            type="button"
-            onClick={() => onSelect(size)}
-            aria-pressed={size === selected}
-            className={cn(
-              "h-11 min-w-11 rounded-lg border px-3 font-mono text-sm uppercase transition-colors",
-              size === selected
-                ? "border-brand bg-brand/10 text-brand"
-                : "border-line text-muted hover:border-muted hover:text-ink",
-            )}
-          >
-            {size}
-          </button>
-        ))}
+        {sizes.map((size) => {
+          const available = isOptionAvailable(size, productStock);
+          return (
+            <button
+              key={size.value}
+              type="button"
+              disabled={!available}
+              onClick={() => onSelect(size.value)}
+              aria-pressed={size.value === selected}
+              title={available ? undefined : t("outOfStock")}
+              className={cn(
+                "h-11 min-w-11 rounded-lg border px-3 font-mono text-sm uppercase transition-colors",
+                size.value === selected && available
+                  ? "border-brand bg-brand/10 text-brand"
+                  : "border-line text-muted hover:border-muted hover:text-ink",
+                !available &&
+                  "cursor-not-allowed border-line/60 text-muted/50 line-through hover:border-line/60 hover:text-muted/50",
+              )}
+            >
+              {size.value}
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -96,15 +126,17 @@ export function SizePicker({ sizes, selected, onSelect }: SizePickerProps) {
 interface CustomVariantPickerProps {
   groups: ProductVariantGroup[];
   selections: Record<string, string>;
-  onSelect: (groupNameFr: string, value: string) => void;
+  onSelect: (groupNameFr: string, value: string, imageUrl: string | null) => void;
+  productStock: number;
 }
 
 export function CustomVariantPicker({
   groups,
   selections,
   onSelect,
+  productStock,
 }: CustomVariantPickerProps) {
-  const { lang } = useLanguage();
+  const { t, lang } = useLanguage();
   if (groups.length === 0) return null;
 
   return (
@@ -115,22 +147,41 @@ export function CustomVariantPicker({
             {pick(lang, group, "name")}
           </p>
           <div className="flex flex-wrap gap-2">
-            {group.values.map((value) => (
-              <button
-                key={value}
-                type="button"
-                onClick={() => onSelect(group.name_fr, value)}
-                aria-pressed={selections[group.name_fr] === value}
-                className={cn(
-                  "h-11 rounded-lg border px-3.5 text-sm transition-colors",
-                  selections[group.name_fr] === value
-                    ? "border-brand bg-brand/10 text-brand"
-                    : "border-line text-muted hover:border-muted hover:text-ink",
-                )}
-              >
-                {value}
-              </button>
-            ))}
+            {group.values.map((entry) => {
+              const available = isOptionAvailable(entry, productStock);
+              const isActive = selections[group.name_fr] === entry.value;
+              return (
+                <button
+                  key={entry.value}
+                  type="button"
+                  disabled={!available}
+                  onClick={() => onSelect(group.name_fr, entry.value, entry.image_url ?? null)}
+                  aria-pressed={isActive}
+                  title={available ? undefined : t("outOfStock")}
+                  className={cn(
+                    "flex h-11 items-center gap-2 rounded-lg border px-3.5 text-sm transition-colors",
+                    isActive && available
+                      ? "border-brand bg-brand/10 text-brand"
+                      : "border-line text-muted hover:border-muted hover:text-ink",
+                    !available &&
+                      "cursor-not-allowed border-line/60 text-muted/50 line-through hover:border-line/60 hover:text-muted/50",
+                  )}
+                >
+                  {entry.image_url && (
+                    <img
+                      src={entry.image_url}
+                      alt=""
+                      width={24}
+                      height={24}
+                      loading="lazy"
+                      decoding="async"
+                      className="-ms-1.5 h-6 w-6 shrink-0 rounded object-cover"
+                    />
+                  )}
+                  {entry.value}
+                </button>
+              );
+            })}
           </div>
         </div>
       ))}

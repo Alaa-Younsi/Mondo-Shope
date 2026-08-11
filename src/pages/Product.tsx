@@ -20,6 +20,7 @@ import { useSeo, SITE_URL } from "@/hooks/useSeo";
 import { usePixel } from "@/components/MetaPixelProvider";
 import { useCart } from "@/store/cart";
 import { discountPercent, pick } from "@/lib/utils";
+import { availableStock, isSoldOut, missingChoices } from "@/lib/variantStock";
 import { formatPrice } from "@/lib/format";
 import type { ProductColor, VariantSelection } from "@/types/db";
 
@@ -133,8 +134,15 @@ export default function Product() {
     );
   }
 
-  const soldOut = product.stock <= 0;
+  // Sold out when the product pool is empty OR some axis has no option left —
+  // a shirt with every size at zero is not buyable whatever the total says.
+  const soldOut = isSoldOut(product);
   const off = discountPercent(product.price, product.compare_at_price);
+
+  const choice = { colorHex, size, variantPicks };
+  // The ceiling is the smallest pool among everything actually selected.
+  const stockLeft = availableStock(product, choice);
+  const missing = missingChoices(product, choice);
 
   const buildVariants = (): VariantSelection[] =>
     product.variants
@@ -171,7 +179,7 @@ export default function Product() {
       size,
       variants: buildVariants(),
       offers: product.quantity_offers,
-      maxStock: product.stock,
+      maxStock: stockLeft,
     });
 
     // An event handler, not an effect — no StrictMode double-invoke concern.
@@ -207,9 +215,9 @@ export default function Product() {
               <Badge tone={soldOut ? "danger" : "success"}>
                 {soldOut ? t("outOfStock") : t("inStock")}
               </Badge>
-              {!soldOut && product.stock <= 5 && (
+              {!soldOut && stockLeft > 0 && stockLeft <= 5 && (
                 <Badge tone="warning">
-                  <span dir="ltr">{product.stock}</span> {t("stockLeft")}
+                  <span dir="ltr">{stockLeft}</span> {t("stockLeft")}
                 </Badge>
               )}
             </div>
@@ -252,6 +260,7 @@ export default function Product() {
 
           <ColorPicker
             colors={colors}
+            productStock={product.stock}
             selectedHex={colorHex}
             onSelect={(hex, label) => {
               setColorHex(hex);
@@ -266,23 +275,62 @@ export default function Product() {
             }}
           />
 
-          <SizePicker sizes={product.sizes} selected={size} onSelect={setSize} />
+          <SizePicker
+            sizes={product.sizes}
+            productStock={product.stock}
+            selected={size}
+            onSelect={setSize}
+          />
 
           <CustomVariantPicker
             groups={product.variants}
+            productStock={product.stock}
             selections={variantPicks}
-            onSelect={(groupName, value) =>
-              setVariantPicks((current) => ({ ...current, [groupName]: value }))
-            }
+            onSelect={(groupName, value, imageUrl) => {
+              setVariantPicks((current) => ({ ...current, [groupName]: value }));
+              // Same behaviour colours already had: a value with its own photo
+              // jumps the gallery to it.
+              if (imageUrl) {
+                const index = galleryImages.findIndex((entry) => entry.url === imageUrl);
+                if (index >= 0) setActiveImage(index);
+              }
+            }}
           />
 
           {!soldOut && (
-            <div className="flex flex-wrap items-center gap-3">
-              <QuantityStepper value={quantity} onChange={setQuantity} max={product.stock} />
-              <Button onClick={handleAddToCart} size="lg" className="flex-1">
-                {added ? <Check size={16} /> : <ShoppingCart size={16} />}
-                {added ? t("addedToCart") : t("addToCart")}
-              </Button>
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <QuantityStepper value={quantity} onChange={setQuantity} max={stockLeft} />
+                <Button
+                  onClick={handleAddToCart}
+                  size="lg"
+                  className="flex-1"
+                  // place_order() rejects a missing choice outright, so blocking
+                  // here is what keeps that from becoming a mystery error after
+                  // the customer has typed their phone number.
+                  disabled={missing.length > 0 || stockLeft <= 0}
+                >
+                  {added ? <Check size={16} /> : <ShoppingCart size={16} />}
+                  {added ? t("addedToCart") : t("addToCart")}
+                </Button>
+              </div>
+              {missing.length > 0 && (
+                <p className="text-xs text-muted">
+                  {t("chooseOptionsFirst", {
+                    options: missing
+                      .map((entry) =>
+                        entry.kind === "color"
+                          ? t("chooseColor")
+                          : entry.kind === "size"
+                            ? t("chooseSize")
+                            : entry.group
+                              ? pick(lang, entry.group, "name")
+                              : "",
+                      )
+                      .join(", "),
+                  })}
+                </p>
+              )}
             </div>
           )}
 

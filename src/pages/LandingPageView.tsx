@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import {
@@ -25,11 +25,14 @@ const WIDTHS = {
 
 export default function LandingPageView() {
   const { slug } = useParams<{ slug: string }>();
+  const [searchParams] = useSearchParams();
   const { t, lang } = useLanguage();
   const navigate = useNavigate();
   const pixel = usePixel();
 
-  const { data: page, isLoading } = useLandingPage(slug);
+  // Admin-only draft preview; RLS decides whether it resolves to anything.
+  const preview = searchParams.get("preview") === "1";
+  const { data: page, isLoading } = useLandingPage(slug, preview);
   const product = page?.product ?? null;
 
   const [selection, setSelection] = useState<LandingSelection>({
@@ -92,6 +95,8 @@ export default function LandingPageView() {
     title: seoTitle,
     description: seoDescription,
     image: page?.seo.og_image ?? galleryImages[0]?.url ?? null,
+    // A preview URL must never be the one Google indexes for this campaign.
+    noIndex: preview,
   });
 
   if (isLoading) return <LoadingBlock label={t("loading")} />;
@@ -119,13 +124,20 @@ export default function LandingPageView() {
       // Per-page accent overrides the site token for this subtree only, so the
       // rest of the app keeps the brand colour.
       style={accent ? ({ "--c-brand": accent } as React.CSSProperties) : undefined}
-      className={cn(
-        "flex min-h-dvh flex-col",
-        // The page's own background choice, independent of the visitor's theme.
-        page.theme.background === "light" ? "bg-[rgb(245_245_244)]" : "bg-bg",
-      )}
+      // The page's own background choice, independent of the visitor's theme.
+      // data-theme re-tokens this subtree (see index.css), so bg-bg / text-ink /
+      // border-line inside every block follow the campaign's choice rather than
+      // the site's. Hardcoding a hex here instead is what previously left light
+      // pages drawing the dark theme's near-white ink on a near-white ground.
+      className={cn("flex min-h-dvh flex-col bg-bg text-ink")}
       data-theme={page.theme.background}
     >
+      {preview && (
+        <p className="sticky top-0 z-50 bg-warning px-4 py-2 text-center font-mono text-[11px] uppercase tracking-wider text-black">
+          {t("lpPreviewBanner")}
+        </p>
+      )}
+
       {page.show_header && <Header />}
 
       <main

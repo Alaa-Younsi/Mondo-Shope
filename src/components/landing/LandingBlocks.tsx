@@ -14,6 +14,8 @@ import { useReviews } from "@/hooks/useReviews";
 import { resolveIcon } from "@/lib/icons";
 import { BLOCK_ANCHOR } from "@/lib/landing";
 import { formatPrice } from "@/lib/format";
+import { resolveVideo } from "@/lib/video";
+import { availableStock, isSoldOut, missingChoices } from "@/lib/variantStock";
 import { cn, discountPercent, pick } from "@/lib/utils";
 import type { LandingBlock, CtaTarget } from "@/types/landing";
 import type { Product, ProductColor, VariantSelection } from "@/types/db";
@@ -60,7 +62,10 @@ function CtaButton({
       type="button"
       onClick={() => scrollToTarget(target)}
       className={cn(
-        "fx-sweep inline-flex h-13 items-center justify-center border border-brand bg-brand px-8 text-base font-semibold uppercase tracking-wide text-brand-ink transition-shadow hover:shadow-glow",
+        // h-14, not h-13: 13 is not on Tailwind's spacing scale, so `h-13`
+        // compiled to nothing and every landing CTA — the one button the whole
+        // campaign exists to get tapped — rendered with no height at all.
+        "fx-sweep inline-flex h-14 items-center justify-center border border-brand bg-brand px-8 text-base font-semibold uppercase tracking-wide text-brand-ink transition-shadow hover:shadow-glow",
         radius,
       )}
     >
@@ -79,7 +84,9 @@ function Section({
   id?: string;
 }) {
   return (
-    <section id={id} className={cn("scroll-mt-6 py-12 sm:py-16", className)}>
+    // scroll-mt-20 clears the sticky 4rem header a campaign page can opt into —
+    // with scroll-mt-6 a CTA scrolled its target underneath the header bar.
+    <section id={id} className={cn("scroll-mt-20 py-12 sm:py-16", className)}>
       {children}
     </section>
   );
@@ -249,19 +256,42 @@ export function LandingBlockView({
 
     case "video": {
       const data = block.data;
-      const url = data.url || product?.video_url;
-      if (!url) return null;
+      const video = resolveVideo(data.url || product?.video_url);
+      if (!video) return null;
+
       return (
         <Section>
           <Heading text={pick(lang, data, "title")} />
-          <video
-            src={url}
-            controls
-            // Bytes move only on an actual play.
-            preload="none"
-            poster={data.poster_url ?? galleryImages[0]?.url}
-            className={cn("mx-auto w-full max-w-3xl border border-line bg-black", radius)}
-          />
+          {video.kind === "embed" ? (
+            // 16:9 box: an iframe has no intrinsic ratio, so without this the
+            // player collapses to the browser's default 150px height.
+            <div
+              className={cn(
+                "mx-auto aspect-video w-full max-w-3xl overflow-hidden border border-line bg-black",
+                radius,
+              )}
+            >
+              <iframe
+                src={video.src}
+                title={video.title}
+                loading="lazy"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+                className="h-full w-full border-0"
+              />
+            </div>
+          ) : (
+            <video
+              src={video.src}
+              controls
+              playsInline
+              // Bytes move only on an actual play.
+              preload="none"
+              poster={data.poster_url ?? galleryImages[0]?.url}
+              className={cn("mx-auto w-full max-w-3xl border border-line bg-black", radius)}
+            />
+          )}
         </Section>
       );
     }
@@ -462,7 +492,14 @@ export function LandingBlockView({
       const data = block.data;
       if (!product) return null;
 
-      const soldOut = product.stock <= 0;
+      const soldOut = isSoldOut(product);
+      const choice = {
+        colorHex: selection.colorHex,
+        size: selection.size,
+        variantPicks: selection.variantPicks,
+      };
+      const stockLeft = availableStock(product, choice);
+      const missing = missingChoices(product, choice);
 
       const variants: VariantSelection[] = product.variants
         .filter((group) => selection.variantPicks[group.name_fr])
@@ -503,6 +540,7 @@ export function LandingBlockView({
               <div className="space-y-5">
                 <ColorPicker
                   colors={product.colors}
+                  productStock={product.stock}
                   selectedHex={selection.colorHex}
                   onSelect={(hex, label) => {
                     const color = product.colors.find(
@@ -521,18 +559,24 @@ export function LandingBlockView({
 
                 <SizePicker
                   sizes={product.sizes}
+                  productStock={product.stock}
                   selected={selection.size}
                   onSelect={(size) => onSelectionChange({ size })}
                 />
 
                 <CustomVariantPicker
                   groups={product.variants}
+                  productStock={product.stock}
                   selections={selection.variantPicks}
-                  onSelect={(groupName, value) =>
+                  onSelect={(groupName, value, imageUrl) => {
+                    const index = imageUrl
+                      ? galleryImages.findIndex((entry) => entry.url === imageUrl)
+                      : -1;
                     onSelectionChange({
                       variantPicks: { ...selection.variantPicks, [groupName]: value },
-                    })
-                  }
+                      ...(index >= 0 ? { activeImage: index } : {}),
+                    });
+                  }}
                 />
 
                 <div className="flex items-center justify-between gap-3">
@@ -542,19 +586,40 @@ export function LandingBlockView({
                   <QuantityStepper
                     value={selection.quantity}
                     onChange={(quantity) => onSelectionChange({ quantity })}
-                    max={product.stock}
+                    max={stockLeft}
                   />
                 </div>
 
-                <CheckoutForm
-                  lines={lines}
-                  compact
-                  source={`lp:${slug}`}
-                  askAddress={data.ask_address}
-                  askNotes={data.ask_notes}
-                  submitLabel={t("lpOrderNow")}
-                  onSuccess={onOrderPlaced}
-                />
+                {missing.length > 0 ? (
+                  // The form is withheld rather than shown-and-rejected: on a
+                  // campaign page the order form IS the page, and a customer
+                  // who fills it in only to be told "choose a size" is lost.
+                  <p className="rounded-lg border border-warning/40 bg-warning/10 p-4 text-center text-sm text-warning">
+                    {t("chooseOptionsFirst", {
+                      options: missing
+                        .map((entry) =>
+                          entry.kind === "color"
+                            ? t("chooseColor")
+                            : entry.kind === "size"
+                              ? t("chooseSize")
+                              : entry.group
+                                ? pick(lang, entry.group, "name")
+                                : "",
+                        )
+                        .join(", "),
+                    })}
+                  </p>
+                ) : (
+                  <CheckoutForm
+                    lines={lines}
+                    compact
+                    source={`lp:${slug}`}
+                    askAddress={data.ask_address}
+                    askNotes={data.ask_notes}
+                    submitLabel={t("lpOrderNow")}
+                    onSuccess={onOrderPlaced}
+                  />
+                )}
               </div>
             )}
           </div>

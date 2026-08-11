@@ -5,6 +5,7 @@ import type {
   LandingSeo,
   LandingTheme,
 } from "@/types/landing";
+import { ICON_REGISTRY } from "./icons";
 import { newId } from "./utils";
 
 /** Order of the "add a block" menu — roughly the order a page is usually built. */
@@ -42,21 +43,12 @@ export const BLOCK_LABEL: Record<LandingBlockType, TranslationKey> = {
   spacer: "blockSpacer",
 };
 
-/** Icon names offered in the feature/trust block editors (lucide-react). */
-export const BLOCK_ICON_CHOICES = [
-  "ShieldCheck",
-  "Truck",
-  "BadgeCheck",
-  "Star",
-  "Heart",
-  "Zap",
-  "Package",
-  "Clock",
-  "Phone",
-  "CreditCard",
-  "RefreshCw",
-  "Award",
-] as const;
+/**
+ * Icon names offered in the feature/trust block editors. Every entry must exist
+ * in ICON_REGISTRY (src/lib/icons.ts) — the picker is generated from that list
+ * so the two can never drift.
+ */
+export const BLOCK_ICON_CHOICES = Object.keys(ICON_REGISTRY);
 
 export const DEFAULT_THEME: LandingTheme = {
   accent: null,
@@ -271,6 +263,31 @@ export function normalizeTheme(raw: unknown): LandingTheme {
 export function normalizeSeo(raw: unknown): LandingSeo {
   const value = (raw ?? {}) as LandingSeo;
   return { ...DEFAULT_SEO, ...value };
+}
+
+/**
+ * `ends_at` is stored as a UTC ISO string, but <input type="datetime-local">
+ * speaks the VIEWER's local time. Slicing the ISO string straight into the
+ * input (the previous approach) showed UTC as if it were local: in Algeria the
+ * client set 20:00, reopened the block to find 19:00, and every re-save walked
+ * the deadline back another hour.
+ */
+export function isoToLocalInput(iso: string | null): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return (
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
+  );
+}
+
+/** The inverse: a local "YYYY-MM-DDTHH:mm" back to a UTC ISO string. */
+export function localInputToIso(value: string): string | null {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
 /** "#RRGGBB" → "R G B" for the CSS variable override. Null when unparseable. */

@@ -18,8 +18,15 @@
      brand-lite #FFC774  the highlight, used for the second glitch channel
      brand-deep #CC6B14  the burnt tone, for depth under the accent
 --------------------------------------------------------------------------- */
+/* The attribute selector is deliberately NOT scoped to html: a landing page
+   renders its own `data-theme` on a plain <div> so the campaign can pick a
+   background independent of the visitor's site theme (LandingPageView.tsx).
+   With `html[data-theme=...]` that div matched nothing, inherited the site's
+   --c-ink, and a "light" campaign page drew near-white text on a near-white
+   ground. Custom properties inherit, so an attribute selector alone re-tokens
+   the whole subtree. */
 :root,
-html[data-theme="dark"] {
+[data-theme="dark"] {
   color-scheme: dark;
   /* Warm, not neutral. The surfaces are tinted toward the palette's burnt
      tones rather than pure grey — a neutral #0A0A0B under an ochre accent
@@ -44,29 +51,34 @@ html[data-theme="dark"] {
   --neon-strength: 1;
 }
 
-html[data-theme="light"] {
+[data-theme="light"] {
   color-scheme: light;
-  /* Light grey, neutral. The ground is a soft grey rather than white so panels
-     can sit ON it and still read as raised, and the ochre accent is the only
-     warm thing on the page — which is what makes it read as the accent. */
-  --c-bg: 238 239 241;
-  --c-panel: 252 252 253;
-  --c-panel-2: 231 233 236;
-  --c-line: 208 212 218;
-  --c-ink: 24 26 29;
-  --c-muted: 92 98 107;
-  /* Darker than the dark-theme accent: #D08921 fails contrast on light grey. */
-  --c-brand: 178 90 14;
-  --c-brand-dim: 143 71 10;
-  --c-brand-lite: 232 163 60;
-  --c-brand-deep: 163 79 11;
-  --c-brand-ink: 255 255 255;
+  /* Warm parchment — brown and yellow rather than grey, so the ochre accent
+     belongs to the ground instead of sitting on top of it.
+
+     Every pair here was checked against WCAG: ink 12.8:1 on bg, muted 5.6:1,
+     brand 4.9:1, brand-ink 5.9:1 on a brand fill. Darkening bg further to suit
+     the logo was not an option — see Wordmark.tsx for why the logo gets its
+     own light-theme file instead. */
+  --c-bg: 240 227 198;
+  --c-panel: 250 242 223;
+  --c-panel-2: 229 212 172;
+  --c-line: 205 182 132;
+  --c-ink: 42 30 9;
+  --c-muted: 107 85 38;
+  /* Much deeper than the dark theme's #D08921: a bright ochre on parchment is
+     two shades of the same thing and reads as a smudge, not an accent. */
+  --c-brand: 152 76 6;
+  --c-brand-dim: 124 61 4;
+  --c-brand-lite: 217 142 43;
+  --c-brand-deep: 110 54 4;
+  --c-brand-ink: 255 248 234;
   --c-danger: 190 32 32;
   --c-success: 21 128 61;
   --c-warning: 161 98 7;
   --scanline-opacity: 0.02;
   --grid-alpha: 0.1;
-  /* Neon over light grey is smog. The glow is nearly off in the light theme. */
+  /* Neon over parchment is smog. The glow is nearly off in the light theme. */
   --neon-strength: 0.25;
 }
 
@@ -258,8 +270,8 @@ html[data-theme="light"] {
     mix-blend-mode: screen;
   }
   /* screen over a light ground is invisible; multiply keeps the orbs readable
-     as a warm tint on the grey. */
-  html[data-theme="light"] .hero-orb {
+     as a warm tint on the parchment. */
+  [data-theme="light"] .hero-orb {
     mix-blend-mode: multiply;
     filter: blur(70px);
     opacity: 0.5;
