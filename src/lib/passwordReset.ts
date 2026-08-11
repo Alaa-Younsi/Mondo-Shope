@@ -5,7 +5,9 @@ import { supabase } from "@/lib/supabase";
  *
  * This exact URL (origin + path) has to be listed under
  * Supabase → Authentication → URL Configuration → Redirect URLs, otherwise the
- * link falls back to the Site URL and the token never reaches this app.
+ * link falls back to the Site URL and the token never reaches this app. In
+ * production that is:
+ *   https://www.mondoshope.shop/admin/nouveau-mot-de-passe
  */
 export const PASSWORD_RESET_PATH = "/admin/nouveau-mot-de-passe";
 

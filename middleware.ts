@@ -19,7 +19,10 @@ export const config = {
   matcher: ["/produit/:slug*", "/lp/:slug*"],
 };
 
-const SITE_URL = (process.env.VITE_SITE_URL || "https://PLACEHOLDER-DOMAIN.tld").replace(
+// Production origin as the default, not just an env var: an unset
+// VITE_SITE_URL used to make every shared link preview point at a domain that
+// does not exist. Keep the www — the apex has no DNS record.
+const SITE_URL = (process.env.VITE_SITE_URL || "https://www.mondoshope.shop").replace(
   /\/$/,
   "",
 );

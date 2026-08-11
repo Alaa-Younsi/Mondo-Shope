@@ -4,5 +4,4 @@ Disallow: /admin
 Disallow: /checkout
 Disallow: /commande/
 
-# Replace with the real domain before go-live.
-Sitemap: https://PLACEHOLDER-DOMAIN.tld/sitemap.xml
+Sitemap: https://www.mondoshope.shop/sitemap.xml

@@ -164,14 +164,17 @@ description as text above the image, so a logo card is largely redundant.
 4. **Turn off public sign-up** (Authentication → Sign In / Providers). The
    allow-list already blocks self-registered admins, but there is no reason to
    let strangers create auth rows at all.
-5. **Set the production domain.** Grep for `PLACEHOLDER-DOMAIN.tld` and replace
-   every hit: `index.html` (canonical, `og:url`, `og:image`, JSON-LD),
-   `public/robots.txt`, `.env` / Vercel `VITE_SITE_URL`. The sitemap generator,
-   `useSeo` and `middleware.ts` all read `VITE_SITE_URL`.
+5. **The production domain is `https://www.mondoshope.shop`** and is already
+   baked in: `index.html` (canonical, `og:url`, `og:image`, JSON-LD),
+   `public/robots.txt`, and the *defaults* in `useSeo.ts`, `middleware.ts` and
+   `scripts/generate-sitemap.mjs`. `VITE_SITE_URL` still overrides all three, so
+   set it only on a preview deploy that must canonicalise to its own origin —
+   and never leave it pointing at `localhost`, or the generated sitemap ships
+   localhost URLs. Keep the `www`: the apex `mondoshope.shop` has no DNS record.
 6. **Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the Vercel project
    env**, not just `.env` — the link-preview middleware reads them at the edge
    and silently degrades to the generic card without them. Verify after deploy:
-   `curl -A "facebookexternalhit/1.1" https://<domain>/produit/<slug>`
+   `curl -A "facebookexternalhit/1.1" https://www.mondoshope.shop/produit/<slug>`
 7. **Set delivery prices per wilaya** in `/admin/livraison`. All 58 wilayas are
    seeded at 0 — nothing ships at a sane price until this is filled in. Disable
    any wilaya you don't serve.

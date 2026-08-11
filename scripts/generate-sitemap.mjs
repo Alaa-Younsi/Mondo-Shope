@@ -9,7 +9,10 @@
 import { writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 
-const DOMAIN = (process.env.VITE_SITE_URL || "https://PLACEHOLDER-DOMAIN.tld").replace(
+// Production origin as the default. A sitemap is only ever consumed by search
+// engines at the real domain, so falling back to a placeholder — or to whatever
+// a developer happens to have in their local .env — publishes URLs that 404.
+const DOMAIN = (process.env.VITE_SITE_URL || "https://www.mondoshope.shop").replace(
   /\/$/,
   "",
 );

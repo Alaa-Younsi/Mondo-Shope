@@ -1,8 +1,17 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
 
+/**
+ * The canonical origin, WITH the www — `mondoshope.shop` has no DNS record of
+ * its own, so a canonical without it points at nothing.
+ *
+ * The production domain is the default rather than only an env var: when
+ * VITE_SITE_URL went unset in Vercel, every canonical, og:url and sitemap entry
+ * on the live site silently pointed at the placeholder domain instead. The env
+ * var still wins where it is set, which is what preview deploys need.
+ */
 export const SITE_URL = (
-  import.meta.env.VITE_SITE_URL || "https://PLACEHOLDER-DOMAIN.tld"
+  import.meta.env.VITE_SITE_URL || "https://www.mondoshope.shop"
 ).replace(/\/$/, "");
 
 interface SeoOptions {

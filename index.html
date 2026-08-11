@@ -21,7 +21,7 @@
       content="Mondo Shope — boutique en ligne en Algérie. Produits vérifiés en stock, paiement à la livraison, livraison à domicile ou au bureau dans toutes les wilayas."
     />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://PLACEHOLDER-DOMAIN.tld/" />
+    <link rel="canonical" href="https://www.mondoshope.shop/" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Mondo Shope" />
@@ -30,9 +30,9 @@
       property="og:description"
       content="Produits vérifiés en stock, paiement à la livraison, livraison à domicile ou au bureau dans toutes les wilayas."
     />
-    <meta property="og:url" content="https://PLACEHOLDER-DOMAIN.tld/" />
-    <meta property="og:image" content="https://PLACEHOLDER-DOMAIN.tld/og-image.png" />
-    <meta property="og:image:secure_url" content="https://PLACEHOLDER-DOMAIN.tld/og-image.png" />
+    <meta property="og:url" content="https://www.mondoshope.shop/" />
+    <meta property="og:image" content="https://www.mondoshope.shop/og-image.png" />
+    <meta property="og:image:secure_url" content="https://www.mondoshope.shop/og-image.png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="Mondo Shope" />
@@ -45,16 +45,37 @@
       name="twitter:description"
       content="Produits vérifiés en stock, paiement à la livraison, livraison à domicile ou au bureau dans toutes les wilayas."
     />
-    <meta name="twitter:image" content="https://PLACEHOLDER-DOMAIN.tld/og-image.png" />
+    <meta name="twitter:image" content="https://www.mondoshope.shop/og-image.png" />
+
+    <!-- Lets Google resolve a site search straight into /shop?q=… , which is a
+         route that already exists (Shop.tsx reads the `q` param). -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Mondo Shope",
+        "url": "https://www.mondoshope.shop/",
+        "inLanguage": ["fr-DZ", "ar-DZ"],
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://www.mondoshope.shop/shop?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
 
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "Store",
+        "@id": "https://www.mondoshope.shop/#store",
         "name": "Mondo Shope",
-        "url": "https://PLACEHOLDER-DOMAIN.tld/",
-        "logo": "https://PLACEHOLDER-DOMAIN.tld/logo.png",
-        "image": "https://PLACEHOLDER-DOMAIN.tld/og-image.png",
+        "url": "https://www.mondoshope.shop/",
+        "logo": "https://www.mondoshope.shop/logo.png",
+        "image": "https://www.mondoshope.shop/og-image.png",
         "description": "Boutique en ligne en Algérie — paiement à la livraison dans toutes les wilayas.",
         "areaServed": "Algérie",
         "paymentAccepted": "Cash on delivery"
