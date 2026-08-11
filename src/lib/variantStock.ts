@@ -37,6 +37,20 @@ export function isOptionAvailable(
 }
 
 /**
+ * The option's OWN pool, or null when it is untracked.
+ *
+ * This is what the shopper-facing count is built from, and it deliberately
+ * does not fall back to the product's stock the way `optionStock` does: an
+ * untracked option has no number of its own to show, and printing the product
+ * total under each of three colours would advertise three times the stock the
+ * shop actually holds.
+ */
+export function trackedStock(option: { stock?: number | null } | undefined): number | null {
+  if (!option || option.stock == null) return null;
+  return Math.max(0, option.stock);
+}
+
+/**
  * The real ceiling for the quantity stepper: the smallest pool among the
  * product and every option the shopper has actually selected.
  */
