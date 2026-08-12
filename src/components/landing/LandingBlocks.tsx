@@ -15,7 +15,13 @@ import { resolveIcon } from "@/lib/icons";
 import { BLOCK_ANCHOR } from "@/lib/landing";
 import { formatPrice } from "@/lib/format";
 import { resolveVideo } from "@/lib/video";
-import { availableStock, isSoldOut, missingChoices } from "@/lib/variantStock";
+import {
+  availableStock,
+  isSoldOut,
+  missingChoices,
+  optionAvailability,
+  sizeAfterColorChange,
+} from "@/lib/variantStock";
 import { cn, discountPercent, pick } from "@/lib/utils";
 import type { LandingBlock, CtaTarget } from "@/types/landing";
 import type { Product, ProductColor, VariantSelection } from "@/types/db";
@@ -500,6 +506,10 @@ export function LandingBlockView({
       };
       const stockLeft = availableStock(product, choice);
       const missing = missingChoices(product, choice);
+      const can = optionAvailability(product, choice);
+      // Same render-time clamp as the product page: switching to a smaller
+      // combination must not leave a stale quantity on the line.
+      const qty = Math.min(selection.quantity, Math.max(1, stockLeft));
 
       const variants: VariantSelection[] = product.variants
         .filter((group) => selection.variantPicks[group.name_fr])
@@ -514,7 +524,7 @@ export function LandingBlockView({
           productId: product.id,
           name: pick(lang, product, "name"),
           price: Number(product.price),
-          quantity: selection.quantity,
+          quantity: qty,
           color: selection.colorLabel,
           size: selection.size,
           variants,
@@ -540,7 +550,7 @@ export function LandingBlockView({
               <div className="space-y-5">
                 <ColorPicker
                   colors={product.colors}
-                  productStock={product.stock}
+                  isAvailable={can.color}
                   selectedHex={selection.colorHex}
                   onSelect={(hex, label) => {
                     const color = product.colors.find(
@@ -552,6 +562,9 @@ export function LandingBlockView({
                     onSelectionChange({
                       colorHex: hex,
                       colorLabel: label,
+                      // Drop a size the new colour does not stock, as the
+                      // product page does.
+                      size: sizeAfterColorChange(product, hex, selection.size),
                       ...(index >= 0 ? { activeImage: index } : {}),
                     });
                   }}
@@ -559,14 +572,14 @@ export function LandingBlockView({
 
                 <SizePicker
                   sizes={product.sizes}
-                  productStock={product.stock}
+                  isAvailable={can.size}
                   selected={selection.size}
                   onSelect={(size) => onSelectionChange({ size })}
                 />
 
                 <CustomVariantPicker
                   groups={product.variants}
-                  productStock={product.stock}
+                  isAvailable={can.custom}
                   selections={selection.variantPicks}
                   onSelect={(groupName, value, imageUrl) => {
                     const index = imageUrl
@@ -584,7 +597,7 @@ export function LandingBlockView({
                     {t("quantity")}
                   </span>
                   <QuantityStepper
-                    value={selection.quantity}
+                    value={qty}
                     onChange={(quantity) => onSelectionChange({ quantity })}
                     max={stockLeft}
                   />

@@ -147,12 +147,46 @@ storefront greys the option out and strikes it through at zero, the quantity
 stepper is capped by the smallest selected pool, and Add to cart / the landing
 order form stay disabled until every axis with stock left has been answered.
 
-**Pools are independent per axis, not a matrix.** Buying one "Red / M"
-decrements Red by one *and* M by one; there is no Red-M cell. With two tracked
-axes this can oversell one exact pairing — 10 Red and 8 M in stock but only 3
-real Red-M. That is the deliberate trade for an admin form with one box per
-option rather than a grid that grows multiplicatively. If a product ever needs
-true combination stock, model it as separate products.
+### The colour × size grid
+
+Independent pools oversell one exact pairing: 10 Red and 8 M in stock can still
+be only 3 real Red-M, and nothing in the per-axis model knows that. `0013` adds
+an optional grid that does.
+
+```
+stock_matrix  [{ "color": "<hex>", "size": "<value>", "stock": <int> }]
+```
+
+One cell per offered pairing, edited as a table in the product form — colours
+down the side, sizes across the top. Set it up under **Stock par couleur et
+taille**.
+
+- **Empty `stock_matrix` = no grid**, and every product written before `0013`
+  has exactly that. Those keep the independent-pool behaviour above, unchanged.
+- **A cell that is unticked is NOT OFFERED** — different from a cell at zero,
+  which stays listed and struck through. Retiring a combination does not bring
+  it back on cancel; restocking a retired cell would silently return it to sale.
+- **The grid only governs colour and size.** Custom variant axes keep their own
+  independent pools; folding them in too would make the form grow
+  multiplicatively (3 colours × 3 sizes × 2 materials = 18 boxes).
+- **`products.stock` becomes derived.** The `products_sync_matrix_stock` trigger
+  overwrites it with the sum of the cells on every write, and the admin's stock
+  box goes read-only, so the total can never drift from the grid.
+- **Colour stays open, size narrows under it.** Picking Red greys out an L that
+  Red never had; picking L does *not* grey out the other colours. Filtering both
+  ways strands a shopper who wants to switch colour. A size invalidated by a
+  colour change is dropped, not silently kept.
+- Deleting a colour or size prunes its cells server-side (`matrix_prune`), so an
+  orphaned row cannot keep counting toward the total.
+
+`place_order()` resolves the shopper's colour **label** back to the hex the grid
+is keyed on — labels are bilingual and the order stores whichever language was
+being browsed, so the hex is the only stable key.
+
+**No stock count is ever shown to a shopper.** Not per option, not as an "only N
+left" badge. An option is selectable or visibly disabled with "épuisé"; the
+numbers exist only to cap the quantity stepper. Note that raw counts are still
+present in the products API response — see *Known gaps*.
 
 `place_order()` also now **rejects an unanswered or unknown option** rather than
 storing whatever string the client sent, so an order can no longer arrive for a
@@ -267,10 +301,21 @@ description as text above the image, so a logo card is largely redundant.
 
 - **Staff accounts with per-section permissions** were excluded from this build
   by request. The `admin_users` allow-list is a single flat admin role: everyone
-  on it can do everything. Adding or removing an admin is done in the Supabase
-  SQL editor. If the client later hires staff, this becomes an
+  on it can do everything — `dev@mondoshope.shop`, added in `0012`, has exactly
+  the same rights as the owner account. The allow-list is owned by
+  `0012_dev_admin_account.sql`: edit the two email lists there, and create the
+  auth user under Authentication → Users first. Do not edit `0008`, whose
+  single-operator revoke clause `0012` supersedes. If the client later hires staff, this becomes an
   `admin_profiles` table with a `sections text[]` column plus `has_section()`
   policies and a service-role edge function to create accounts.
+- **Stock counts are hidden in the UI, not in the API.** The storefront never
+  prints a number, but `products` is world-readable and the row still carries
+  `stock` and every `stock_matrix` cell, so anyone reading the network tab can
+  see them. Closing that means serving the storefront from a view that replaces
+  each count with `least(count, 20)` — 20 being the per-line cap `place_order()`
+  already enforces, so the stepper keeps working while 21 and 500 look
+  identical. Not done here because it changes the public read path that the
+  landing pages and the link-preview middleware also use.
 - **Finance / physical-store ledger** were also excluded by request. There is no
   cost price, margin, expense or till tracking anywhere. `/admin` shows booked
   revenue (non-cancelled orders) only.

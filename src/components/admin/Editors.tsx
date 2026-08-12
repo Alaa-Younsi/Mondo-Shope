@@ -7,9 +7,11 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { sanitizeOffers } from "@/lib/offers";
 import type {
   ProductColor,
+  ProductSize,
   ProductVariantGroup,
   ProductVariantValue,
   QuantityOffer,
+  StockCell,
 } from "@/types/db";
 
 /* -------------------------------------------------------------------------- */
@@ -100,12 +102,15 @@ export function OptionListEditor({
   onChange,
   withImages,
   placeholder,
+  /** Hide the per-value stock box: a stock grid is on, so it is ignored. */
+  stockFromGrid,
 }: {
   values: ProductVariantValue[];
   onChange: (next: ProductVariantValue[]) => void;
   /** Custom variant values offer a photo; sizes do not. */
   withImages?: boolean;
   placeholder?: string;
+  stockFromGrid?: boolean;
 }) {
   const { t } = useLanguage();
   const [draft, setDraft] = useState("");
@@ -140,25 +145,27 @@ export function OptionListEditor({
             </Field>
           </div>
 
-          <div className="w-28">
-            <Field label={t("prodOptionStock")}>
-              <Input
-                type="number"
-                min={0}
-                dir="ltr"
-                placeholder={t("prodStockUntracked")}
-                value={entry.stock ?? ""}
-                onChange={(event) =>
-                  update(index, {
-                    stock:
-                      event.target.value === ""
-                        ? null
-                        : Math.max(0, Math.floor(Number(event.target.value) || 0)),
-                  })
-                }
-              />
-            </Field>
-          </div>
+          {!stockFromGrid && (
+            <div className="w-28">
+              <Field label={t("prodOptionStock")}>
+                <Input
+                  type="number"
+                  min={0}
+                  dir="ltr"
+                  placeholder={t("prodStockUntracked")}
+                  value={entry.stock ?? ""}
+                  onChange={(event) =>
+                    update(index, {
+                      stock:
+                        event.target.value === ""
+                          ? null
+                          : Math.max(0, Math.floor(Number(event.target.value) || 0)),
+                    })
+                  }
+                />
+              </Field>
+            </div>
+          )}
 
           {withImages && (
             <ImageUploader
@@ -199,7 +206,9 @@ export function OptionListEditor({
         </Button>
       </div>
 
-      <p className="text-xs text-muted">{t("prodOptionStockHint")}</p>
+      <p className="text-xs text-muted">
+        {stockFromGrid ? t("prodStockFromGrid") : t("prodOptionStockHint")}
+      </p>
     </div>
   );
 }
@@ -211,9 +220,12 @@ export function OptionListEditor({
 export function ColorsEditor({
   colors,
   onChange,
+  /** Hide the per-colour stock box: a stock grid is on, so it is ignored. */
+  stockFromGrid,
 }: {
   colors: ProductColor[];
   onChange: (next: ProductColor[]) => void;
+  stockFromGrid?: boolean;
 }) {
   const { t } = useLanguage();
 
@@ -252,26 +264,31 @@ export function ColorsEditor({
           </Field>
 
           {/* Empty = untracked: this colour sells against the product's own
-              stock. A number gives it a pool place_order() checks separately. */}
-          <div className="w-28">
-            <Field label={t("prodOptionStock")}>
-              <Input
-                type="number"
-                min={0}
-                dir="ltr"
-                placeholder={t("prodStockUntracked")}
-                value={color.stock ?? ""}
-                onChange={(event) =>
-                  update(index, {
-                    stock:
-                      event.target.value === ""
-                        ? null
-                        : Math.max(0, Math.floor(Number(event.target.value) || 0)),
-                  })
-                }
-              />
-            </Field>
-          </div>
+              stock. A number gives it a pool place_order() checks separately.
+              Withheld entirely under a stock grid — the grid is the authority
+              there, and an editable box that changes nothing is worse than no
+              box at all. */}
+          {!stockFromGrid && (
+            <div className="w-28">
+              <Field label={t("prodOptionStock")}>
+                <Input
+                  type="number"
+                  min={0}
+                  dir="ltr"
+                  placeholder={t("prodStockUntracked")}
+                  value={color.stock ?? ""}
+                  onChange={(event) =>
+                    update(index, {
+                      stock:
+                        event.target.value === ""
+                          ? null
+                          : Math.max(0, Math.floor(Number(event.target.value) || 0)),
+                    })
+                  }
+                />
+              </Field>
+            </div>
+          )}
 
           {/* An optional photo: picking this swatch jumps the product gallery
               to it. Colours without one simply leave the gallery alone. */}
@@ -483,6 +500,221 @@ export function OffersEditor({
       </Button>
 
       <p className="text-xs leading-relaxed text-muted">{t("prodOffersHint")}</p>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/* Colour x size stock grid                                                    */
+/* -------------------------------------------------------------------------- */
+
+/**
+ * The grid that connects colour and size (migration 0013).
+ *
+ * Rows are the product's colours, columns its sizes, and each cell holds the
+ * stock for that exact pairing. Unticking a cell means the combination is NOT
+ * OFFERED, which is a different thing from a cell holding zero: zero shows the
+ * shopper a struck-through option that may come back, absent removes it from
+ * that colour entirely.
+ *
+ * The grid is keyed on the colour's HEX rather than its label, because labels
+ * are bilingual and editable — renaming "Rouge" to "Rouge vif" must not orphan
+ * a row. `place_order()` resolves the shopper's label back to the hex.
+ *
+ * Turning the grid off (the toggle) clears every cell. That is deliberate and
+ * irreversible in one step: a half-kept grid would leave the product's stock
+ * split between two models with no way to say which one is true.
+ */
+export function StockMatrixEditor({
+  colors,
+  sizes,
+  matrix,
+  onChange,
+}: {
+  colors: ProductColor[];
+  sizes: ProductSize[];
+  matrix: StockCell[];
+  onChange: (next: StockCell[]) => void;
+}) {
+  const { t } = useLanguage();
+
+  // Both axes are needed to have anything to cross. The SQL agrees — see
+  // matrix_active() — so an unbuildable grid is not offered rather than shown
+  // empty and mysterious.
+  if (colors.length === 0 || sizes.length === 0) {
+    return <p className="text-xs text-muted">{t("prodGridNeedsAxes")}</p>;
+  }
+
+  const enabled = matrix.length > 0;
+  const cellAt = (color: string, size: string) =>
+    matrix.find((cell) => cell.color === color && cell.size === size);
+
+  const total = matrix.reduce((sum, cell) => sum + Math.max(0, cell.stock), 0);
+
+  /*
+   * Row and column totals are DERIVED, never stored.
+   *
+   * A colour's stock is the sum of its sizes — there is no separate "Red = 70"
+   * to type, and so no way for the sizes to exceed it. Storing both would mean
+   * two numbers for one fact, and every sale, cancellation and manual edit
+   * would have to keep them agreeing. These read-outs exist so the admin can
+   * SEE the colour total while distributing it, not so they can set it.
+   */
+  const colorTotal = (hex: string) =>
+    matrix
+      .filter((cell) => cell.color === hex)
+      .reduce((sum, cell) => sum + Math.max(0, cell.stock), 0);
+
+  const sizeTotal = (value: string) =>
+    matrix
+      .filter((cell) => cell.size === value)
+      .reduce((sum, cell) => sum + Math.max(0, cell.stock), 0);
+
+  const setCell = (color: string, size: string, stock: number) => {
+    const rest = matrix.filter((cell) => !(cell.color === color && cell.size === size));
+    onChange([...rest, { color, size, stock: Math.max(0, Math.floor(stock) || 0) }]);
+  };
+
+  const clearCell = (color: string, size: string) =>
+    onChange(matrix.filter((cell) => !(cell.color === color && cell.size === size)));
+
+  const enable = () =>
+    onChange(
+      colors.flatMap((color) =>
+        sizes.map((size) => ({ color: color.hex, size: size.value, stock: 0 })),
+      ),
+    );
+
+  if (!enabled) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs leading-relaxed text-muted">{t("prodGridOffHint")}</p>
+        <Button variant="secondary" onClick={enable}>
+          <Plus size={14} />
+          {t("prodGridEnable")}
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs leading-relaxed text-muted">{t("prodGridOnHint")}</p>
+
+      {/* Sizes can outgrow a phone-width panel, so the table scrolls inside
+          its own box rather than stretching the admin layout. */}
+      <div className="-mx-1 overflow-x-auto px-1">
+        <table className="w-full min-w-max border-separate border-spacing-1 text-sm">
+          <thead>
+            <tr>
+              <th className="px-2 text-start text-xs font-medium uppercase tracking-wide text-muted">
+                {t("prodGridColorSize")}
+              </th>
+              {sizes.map((size) => (
+                <th
+                  key={size.value}
+                  className="px-2 text-center font-mono text-xs uppercase text-muted"
+                >
+                  {size.value}
+                </th>
+              ))}
+              <th className="px-2 text-end text-xs font-medium uppercase tracking-wide text-muted">
+                {t("prodGridRowTotal")}
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {colors.map((color) => (
+              <tr key={color.hex}>
+                <td className="whitespace-nowrap px-2">
+                  <span className="flex items-center gap-2">
+                    <span
+                      className="h-5 w-5 shrink-0 rounded border border-black/20"
+                      style={{ backgroundColor: color.hex }}
+                    />
+                    <span className="text-ink">{color.label_fr || color.hex}</span>
+                  </span>
+                </td>
+                {sizes.map((size) => {
+                  const cell = cellAt(color.hex, size.value);
+                  const offered = cell !== undefined;
+                  return (
+                    <td key={size.value} className="px-1">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="checkbox"
+                          checked={offered}
+                          aria-label={`${color.label_fr || color.hex} / ${size.value}`}
+                          onChange={(event) =>
+                            event.target.checked
+                              ? setCell(color.hex, size.value, 0)
+                              : clearCell(color.hex, size.value)
+                          }
+                          className="h-4 w-4 shrink-0 accent-brand"
+                        />
+                        {/* Width lives on the wrapper, not the input: `cn` is
+                            a plain join, so a `w-20` here would just collide
+                            with CONTROL's `w-full` and lose. */}
+                        <div className="w-20">
+                          <Input
+                            type="number"
+                            min={0}
+                            dir="ltr"
+                            disabled={!offered}
+                            value={offered ? cell.stock : ""}
+                            placeholder="—"
+                            onChange={(event) =>
+                              setCell(color.hex, size.value, Number(event.target.value))
+                            }
+                            className="text-center"
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  );
+                })}
+                <td className="whitespace-nowrap px-2 text-end">
+                  <span dir="ltr" className="font-mono text-sm text-ink">
+                    {colorTotal(color.hex)}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td className="px-2 pt-1 text-xs font-medium uppercase tracking-wide text-muted">
+                {t("prodGridColTotal")}
+              </td>
+              {sizes.map((size) => (
+                <td key={size.value} className="px-2 pt-1 text-center">
+                  <span dir="ltr" className="font-mono text-sm text-muted">
+                    {sizeTotal(size.value)}
+                  </span>
+                </td>
+              ))}
+              <td className="px-2 pt-1 text-end">
+                <span dir="ltr" className="font-mono text-sm font-semibold text-ink">
+                  {total}
+                </span>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-3">
+        <p className="text-xs text-muted">
+          {t("prodGridTotal")} <span dir="ltr" className="font-mono text-ink">{total}</span>
+        </p>
+        <button
+          type="button"
+          onClick={() => onChange([])}
+          className="rounded-lg border border-line px-3 py-1.5 text-xs text-muted transition-colors hover:border-danger hover:text-danger"
+        >
+          {t("prodGridDisable")}
+        </button>
+      </div>
     </div>
   );
 }

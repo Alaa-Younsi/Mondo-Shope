@@ -22,13 +22,29 @@ export type DeliveryType = "home" | "office";
  * pool of its own: place_order() checks it, decrements it, and the storefront
  * greys the option out at 0.
  *
- * The pools are INDEPENDENT per axis, not a combination matrix. Buying a
- * "Red / M" decrements Red by one and M by one; there is deliberately no
- * Red-M cell. See README — with two tracked axes this can oversell one exact
- * pairing, which is the accepted trade for an admin form the client will
- * actually fill in.
+ * These per-axis pools apply to CUSTOM variant groups, and to colour/size on
+ * products with no stock grid. Once a product has a `stock_matrix` the grid is
+ * the authority for colour and size, and the `stock` fields on those two axes
+ * are ignored — see StockCell.
  */
 export type OptionStock = number | null;
+
+/**
+ * One cell of the colour x size grid (migration 0013).
+ *
+ * `color` is the colour's HEX, not its label: labels are bilingual and the
+ * shopper's language decides which one lands on the order, so the hex is the
+ * only stable key. place_order() translates label back to hex on the way in.
+ *
+ * A combination with NO cell is NOT OFFERED — which is a different thing from
+ * a cell holding zero, and the storefront renders them the same way (disabled)
+ * but must never restock its way out of the first one.
+ */
+export interface StockCell {
+  color: string;
+  size: string;
+  stock: number;
+}
 
 /** A colour swatch. `image_url` is optional: when present, picking the swatch
  *  jumps the product gallery to that photo. */
@@ -105,10 +121,14 @@ export interface Product {
   price: number;
   compare_at_price: number | null;
   category_id: string | null;
+  /** DERIVED once `stock_matrix` is non-empty: a database trigger keeps it
+   *  equal to the sum of the cells, so writing it directly has no effect. */
   stock: number;
   style_code: string | null;
   colors: ProductColor[];
   sizes: ProductSize[];
+  /** Empty = no grid; colour and size fall back to independent per-axis pools. */
+  stock_matrix: StockCell[];
   variants: ProductVariantGroup[];
   quantity_offers: QuantityOffer[];
   video_url: string | null;

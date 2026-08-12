@@ -189,6 +189,8 @@ export const translations = {
       "Une option (taille, couleur…) n'a pas été choisie. Rouvrez le produit, faites votre choix et recommandez.",
     errOptionUnavailable:
       "Une option de votre panier n'existe plus. Rouvrez le produit et choisissez à nouveau.",
+    errComboUnavailable:
+      "Cette combinaison couleur / taille n'est plus proposée. Rouvrez le produit et choisissez à nouveau.",
     errOptionStock: "Cette option vient d'être épuisée. Choisissez-en une autre.",
     errWilayaDisabled: "Nous ne livrons pas encore dans cette wilaya.",
     errInvalidInput: "Certaines informations sont invalides. Vérifiez le formulaire.",
@@ -448,6 +450,22 @@ export const translations = {
     prodStockUntracked: "—",
     prodOptionStockHint:
       "Laissez le stock vide pour ne pas le suivre sur cette option : elle se vend alors sur le stock total du produit. Avec un nombre, l'option a son propre stock, se décrémente à chaque commande et s'affiche « épuisée » à zéro.",
+
+    prodGrid: "Stock par couleur et taille",
+    prodGridNeedsAxes:
+      "Ajoutez au moins une couleur et une taille au produit pour pouvoir croiser les deux.",
+    prodGridOffHint:
+      "Sans grille, les couleurs et les tailles ont chacune leur propre stock, séparément : vendre un « Rouge / M » retire un Rouge et un M, sans savoir combien de Rouge-M il reste vraiment. Activez la grille pour donner un stock à chaque combinaison exacte.",
+    prodGridOnHint:
+      "Un stock par combinaison. Le total d'une couleur est la somme de ses tailles — il n'y a pas de total à saisir séparément, donc les tailles ne peuvent jamais le dépasser. Décochez une case pour ne pas proposer cette combinaison du tout — c'est différent de zéro, qui l'affiche épuisée mais toujours listée. Le client ne voit jamais ces chiffres : il voit seulement le bouton désactivé et « épuisé ».",
+    prodGridEnable: "Activer la grille",
+    prodGridDisable: "Désactiver la grille",
+    prodGridColorSize: "Couleur \\ Taille",
+    prodGridRowTotal: "Total couleur",
+    prodGridColTotal: "Total taille",
+    prodGridTotal: "Stock total (calculé) :",
+    prodStockFromGrid:
+      "Calculé automatiquement à partir de la grille couleur × taille ci-dessous.",
 
     accForgotTitle: "Mot de passe oublié",
     accForgotText:
@@ -823,6 +841,8 @@ export const translations = {
     errOptionRequired:
       "لم يتم اختيار أحد الخيارات (المقاس، اللون…). افتح المنتج من جديد، اختر، ثم أعد الطلب.",
     errOptionUnavailable: "أحد خيارات سلتك لم يعد موجودًا. افتح المنتج واختر من جديد.",
+    errComboUnavailable:
+      "هذه التركيبة من اللون والمقاس لم تعد متوفّرة. افتح المنتج واختر من جديد.",
     errOptionStock: "نفد هذا الخيار للتو. اختر خيارًا آخر.",
     errWilayaDisabled: "لا نوصل إلى هذه الولاية حاليًا.",
     errInvalidInput: "بعض المعلومات غير صحيحة. تحقق من النموذج.",
@@ -1078,6 +1098,20 @@ export const translations = {
     prodStockUntracked: "—",
     prodOptionStockHint:
       "اترك المخزون فارغًا لعدم تتبّعه في هذا الخيار: عندها يُباع من المخزون الإجمالي للمنتج. وبإدخال رقم يصبح للخيار مخزون خاص، ينقص مع كل طلب ويظهر «نفد» عند الصفر.",
+
+    prodGrid: "المخزون حسب اللون والمقاس",
+    prodGridNeedsAxes: "أضف لونًا واحدًا ومقاسًا واحدًا على الأقل حتى تتمكّن من الجمع بينهما.",
+    prodGridOffHint:
+      "بدون جدول، لكل لون ولكل مقاس مخزون مستقلّ: بيع «أحمر / M» ينقص الأحمر واحدًا و M واحدًا، دون معرفة كم بقي فعلاً من أحمر-M. فعّل الجدول لتمنح كل تركيبة مخزونها الخاص.",
+    prodGridOnHint:
+      "مخزون لكل تركيبة. مجموع اللون هو حاصل جمع مقاساته — لا يوجد مجموع يُدخَل بشكل منفصل، لذلك لا يمكن للمقاسات أن تتجاوزه أبدًا. أزل علامة الخانة كي لا تُعرض هذه التركيبة إطلاقًا — وهذا يختلف عن الصفر الذي يُبقيها معروضة لكن «نفدت». الزبون لا يرى هذه الأرقام أبدًا: يرى فقط الزر معطّلاً وكلمة «نفدت».",
+    prodGridEnable: "تفعيل الجدول",
+    prodGridDisable: "تعطيل الجدول",
+    prodGridColorSize: "اللون \\ المقاس",
+    prodGridRowTotal: "مجموع اللون",
+    prodGridColTotal: "مجموع المقاس",
+    prodGridTotal: "المخزون الإجمالي (محسوب):",
+    prodStockFromGrid: "يُحتسب تلقائيًا من جدول اللون × المقاس أدناه.",
 
     accForgotTitle: "نسيت كلمة المرور",
     accForgotText:

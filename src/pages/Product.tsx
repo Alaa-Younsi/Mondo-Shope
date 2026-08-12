@@ -20,7 +20,13 @@ import { useSeo, SITE_URL } from "@/hooks/useSeo";
 import { usePixel } from "@/components/MetaPixelProvider";
 import { useCart } from "@/store/cart";
 import { discountPercent, pick } from "@/lib/utils";
-import { availableStock, isSoldOut, missingChoices } from "@/lib/variantStock";
+import {
+  availableStock,
+  isSoldOut,
+  missingChoices,
+  optionAvailability,
+  sizeAfterColorChange,
+} from "@/lib/variantStock";
 import { formatPrice } from "@/lib/format";
 import type { ProductColor, VariantSelection } from "@/types/db";
 
@@ -140,9 +146,24 @@ export default function Product() {
   const off = discountPercent(product.price, product.compare_at_price);
 
   const choice = { colorHex, size, variantPicks };
-  // The ceiling is the smallest pool among everything actually selected.
+  // The ceiling is the smallest pool among everything actually selected — the
+  // grid cell under a stock grid, the per-axis pools otherwise. Used only to
+  // cap the stepper; the number itself is never shown.
   const stockLeft = availableStock(product, choice);
   const missing = missingChoices(product, choice);
+  const can = optionAvailability(product, choice);
+
+  /*
+   * Clamped at render rather than in a state effect.
+   *
+   * Switching from a combination with 10 left to one with 2 leaves `quantity`
+   * at whatever the stepper was pushed to, and the stepper's own `max` only
+   * gates the + button. Deriving the effective quantity here means the cart
+   * line, the inline checkout and the stepper all read the same clamped number
+   * on the very render the selection changed, with no hook ordering to get
+   * wrong above the early returns.
+   */
+  const qty = Math.min(quantity, Math.max(1, stockLeft));
 
   const buildVariants = (): VariantSelection[] =>
     product.variants
@@ -158,7 +179,7 @@ export default function Product() {
       productId: product.id,
       name,
       price: Number(product.price),
-      quantity,
+      quantity: qty,
       color: colorLabel,
       size,
       variants: buildVariants(),
@@ -174,7 +195,7 @@ export default function Product() {
       nameAr: product.name_ar,
       price: Number(product.price),
       image: images[0]?.url ?? null,
-      quantity,
+      quantity: qty,
       color: colorLabel,
       size,
       variants: buildVariants(),
@@ -187,7 +208,7 @@ export default function Product() {
       content_ids: [product.id],
       content_name: name,
       content_type: "product",
-      value: Number(product.price) * quantity,
+      value: Number(product.price) * qty,
       currency: "DZD",
     });
 
@@ -212,14 +233,11 @@ export default function Product() {
                   <Discount value={off} />
                 </Badge>
               )}
+              {/* In stock / out of stock, and nothing finer. The old "N left"
+                  badge is deliberately gone — see VariantPickers. */}
               <Badge tone={soldOut ? "danger" : "success"}>
                 {soldOut ? t("outOfStock") : t("inStock")}
               </Badge>
-              {!soldOut && stockLeft > 0 && stockLeft <= 5 && (
-                <Badge tone="warning">
-                  <span dir="ltr">{stockLeft}</span> {t("stockLeft")}
-                </Badge>
-              )}
             </div>
 
             <h1 className="font-display text-3xl font-bold uppercase leading-tight tracking-tight text-ink sm:text-4xl">
@@ -260,11 +278,15 @@ export default function Product() {
 
           <ColorPicker
             colors={colors}
-            productStock={product.stock}
+            isAvailable={can.color}
             selectedHex={colorHex}
             onSelect={(hex, label) => {
               setColorHex(hex);
               setColorLabel(label);
+              // Under a grid the chosen size may not exist in the new colour;
+              // keeping it would arm the add button with a pairing the server
+              // rejects.
+              setSize((current) => sizeAfterColorChange(product, hex, current));
               const color = colors.find((entry) => entry.hex === hex);
               if (color?.image_url) {
                 const index = galleryImages.findIndex(
@@ -277,14 +299,14 @@ export default function Product() {
 
           <SizePicker
             sizes={product.sizes}
-            productStock={product.stock}
+            isAvailable={can.size}
             selected={size}
             onSelect={setSize}
           />
 
           <CustomVariantPicker
             groups={product.variants}
-            productStock={product.stock}
+            isAvailable={can.custom}
             selections={variantPicks}
             onSelect={(groupName, value, imageUrl) => {
               setVariantPicks((current) => ({ ...current, [groupName]: value }));
@@ -300,7 +322,7 @@ export default function Product() {
           {!soldOut && (
             <div className="space-y-3">
               <div className="flex flex-wrap items-center gap-3">
-                <QuantityStepper value={quantity} onChange={setQuantity} max={stockLeft} />
+                <QuantityStepper value={qty} onChange={setQuantity} max={stockLeft} />
                 <Button
                   onClick={handleAddToCart}
                   size="lg"

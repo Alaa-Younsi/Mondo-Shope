@@ -1,37 +1,34 @@
 import { Check } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
-import { isOptionAvailable, trackedStock } from "@/lib/variantStock";
 import { cn, pick } from "@/lib/utils";
 import type { ProductColor, ProductSize, ProductVariantGroup } from "@/types/db";
 
 /**
- * The remaining-stock caption printed under one option.
+ * Variant pickers.
  *
- * Only TRACKED options get one — see `trackedStock`. A depleted option keeps
- * its "0" instead of being hidden: the shopper who came for that exact size
- * needs to read that it exists and is gone, which is the same reason the
- * button below is struck through rather than removed.
+ * NO STOCK COUNT IS EVER RENDERED HERE. How many are left is the shop's
+ * business, not the shopper's: a "2 left" caption invites both haggling and a
+ * competitor reading the shop's inventory off the public site. An option is
+ * either selectable or visibly disabled with an "out of stock" label, and
+ * that is the whole vocabulary.
+ *
+ * A depleted option is greyed and struck through rather than removed — the
+ * shopper who came for that exact size needs to read that it exists and is
+ * gone, not wonder whether they misremembered the ad.
+ *
+ * Availability is decided by the caller via `isAvailable`, because under a
+ * stock grid it depends on the OTHER axis: a size is available or not
+ * depending on the colour currently selected. See lib/variantStock.
  */
-function OptionStockNote({ stock }: { stock: number | null }) {
+
+/** Shared "out of stock" caption under a disabled option. */
+function SoldOutNote({ show }: { show: boolean }) {
   const { t } = useLanguage();
-  if (stock === null) return null;
+  if (!show) return null;
 
   return (
-    <span
-      className={cn(
-        "whitespace-nowrap text-[10px] font-medium leading-none",
-        stock <= 0 ? "text-danger" : stock <= 5 ? "text-warning" : "text-muted",
-      )}
-    >
-      {stock <= 0 ? (
-        <>
-          <span dir="ltr">0</span> · {t("soldOut")}
-        </>
-      ) : (
-        <>
-          <span dir="ltr">{stock}</span> {t("stockLeft")}
-        </>
-      )}
+    <span className="whitespace-nowrap text-[10px] font-medium leading-none text-danger">
+      {t("soldOut")}
     </span>
   );
 }
@@ -40,15 +37,14 @@ interface ColorPickerProps {
   colors: ProductColor[];
   selectedHex: string | null;
   onSelect: (hex: string, label: string) => void;
-  /** Product-level stock, the fallback for any option with no pool of its own. */
-  productStock: number;
+  isAvailable: (hex: string) => boolean;
 }
 
 export function ColorPicker({
   colors,
   selectedHex,
   onSelect,
-  productStock,
+  isAvailable,
 }: ColorPickerProps) {
   const { t, lang } = useLanguage();
   if (colors.length === 0) return null;
@@ -65,7 +61,7 @@ export function ColorPicker({
         {colors.map((color) => {
           const label = pick(lang, color, "label");
           const isActive = color.hex === selectedHex;
-          const available = isOptionAvailable(color, productStock);
+          const available = isAvailable(color.hex);
           return (
             <div key={color.hex} className="flex flex-col items-center gap-1">
               <button
@@ -78,9 +74,6 @@ export function ColorPicker({
                 className={cn(
                   "relative flex h-11 w-11 items-center justify-center rounded-lg border-2 transition-transform",
                   isActive ? "border-brand scale-105" : "border-line hover:border-muted",
-                  // Struck through rather than hidden: a shopper who came for
-                  // that colour needs to see it exists and is gone, not wonder
-                  // whether they misremembered the ad.
                   !available && "cursor-not-allowed opacity-40",
                 )}
               >
@@ -103,7 +96,7 @@ export function ColorPicker({
                   />
                 )}
               </button>
-              <OptionStockNote stock={trackedStock(color)} />
+              <SoldOutNote show={!available} />
             </div>
           );
         })}
@@ -116,10 +109,10 @@ interface SizePickerProps {
   sizes: ProductSize[];
   selected: string | null;
   onSelect: (size: string) => void;
-  productStock: number;
+  isAvailable: (value: string) => boolean;
 }
 
-export function SizePicker({ sizes, selected, onSelect, productStock }: SizePickerProps) {
+export function SizePicker({ sizes, selected, onSelect, isAvailable }: SizePickerProps) {
   const { t } = useLanguage();
   if (sizes.length === 0) return null;
 
@@ -130,7 +123,7 @@ export function SizePicker({ sizes, selected, onSelect, productStock }: SizePick
       </p>
       <div className="flex flex-wrap gap-2">
         {sizes.map((size) => {
-          const available = isOptionAvailable(size, productStock);
+          const available = isAvailable(size.value);
           return (
             <div key={size.value} className="flex flex-col items-center gap-1">
               <button
@@ -150,7 +143,7 @@ export function SizePicker({ sizes, selected, onSelect, productStock }: SizePick
               >
                 {size.value}
               </button>
-              <OptionStockNote stock={trackedStock(size)} />
+              <SoldOutNote show={!available} />
             </div>
           );
         })}
@@ -163,14 +156,14 @@ interface CustomVariantPickerProps {
   groups: ProductVariantGroup[];
   selections: Record<string, string>;
   onSelect: (groupNameFr: string, value: string, imageUrl: string | null) => void;
-  productStock: number;
+  isAvailable: (groupNameFr: string, value: string) => boolean;
 }
 
 export function CustomVariantPicker({
   groups,
   selections,
   onSelect,
-  productStock,
+  isAvailable,
 }: CustomVariantPickerProps) {
   const { t, lang } = useLanguage();
   if (groups.length === 0) return null;
@@ -184,7 +177,7 @@ export function CustomVariantPicker({
           </p>
           <div className="flex flex-wrap gap-2">
             {group.values.map((entry) => {
-              const available = isOptionAvailable(entry, productStock);
+              const available = isAvailable(group.name_fr, entry.value);
               const isActive = selections[group.name_fr] === entry.value;
               return (
                 <div key={entry.value} className="flex flex-col items-center gap-1">
@@ -216,7 +209,7 @@ export function CustomVariantPicker({
                     )}
                     {entry.value}
                   </button>
-                  <OptionStockNote stock={trackedStock(entry)} />
+                  <SoldOutNote show={!available} />
                 </div>
               );
             })}

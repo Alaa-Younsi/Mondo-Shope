@@ -10,6 +10,7 @@ import {
   CustomVariantsEditor,
   OffersEditor,
   OptionListEditor,
+  StockMatrixEditor,
 } from "@/components/admin/Editors";
 import { Button } from "@/components/ui/Button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/Form";
@@ -61,6 +62,7 @@ function toFormState(row: Product): ProductFormState {
     style_code: row.style_code,
     colors: Array.isArray(row.colors) ? row.colors : [],
     sizes: Array.isArray(row.sizes) ? row.sizes : [],
+    stock_matrix: Array.isArray(row.stock_matrix) ? row.stock_matrix : [],
     variants: Array.isArray(row.variants) ? row.variants : [],
     quantity_offers: sanitizeOffers(row.quantity_offers),
     video_url: row.video_url,
@@ -84,6 +86,7 @@ const EMPTY: ProductFormState = {
   style_code: null,
   colors: [],
   sizes: [],
+  stock_matrix: [],
   variants: [],
   quantity_offers: [],
   video_url: null,
@@ -166,6 +169,15 @@ export default function ProductForm() {
   const patch = (values: Partial<ProductFormState>) =>
     setForm((current) => ({ ...current, ...values }));
 
+  // Mirrors matrix_active() in SQL: a grid keyed on colour and size only
+  // governs the product while both axes still exist.
+  const gridActive =
+    form.stock_matrix.length > 0 && form.colors.length > 0 && form.sizes.length > 0;
+  const gridTotal = form.stock_matrix.reduce(
+    (sum, cell) => sum + Math.max(0, cell.stock),
+    0,
+  );
+
   const onSave = async () => {
     if (!form.name_fr.trim() && !form.name_ar.trim()) {
       toast.error(t("adminSaveError"));
@@ -200,6 +212,15 @@ export default function ProductForm() {
         // An option with a blank label is unpickable on the storefront and
         // unmatchable by place_order().
         sizes: form.sizes.filter((size) => size.value.trim()),
+        // Cells whose colour or size was just filtered out above would be
+        // orphans. The products_sync_matrix_stock trigger prunes them server
+        // side regardless — this keeps the row we send equal to the row we get
+        // back, so the total the admin sees does not jump after a save.
+        stock_matrix: form.stock_matrix.filter(
+          (cell) =>
+            form.colors.some((color) => color.hex === cell.color) &&
+            form.sizes.some((size) => size.value.trim() === cell.size),
+        ),
       };
 
       let productId = id;
@@ -375,12 +396,21 @@ export default function ProductForm() {
                 }
               />
             </Field>
-            <Field label={t("prodStock")} hint={t("prodStockHint")}>
+            {/* Once a stock grid exists the database owns this number — the
+                products_sync_matrix_stock trigger overwrites it with the sum
+                of the cells on every write. Showing it as editable would let
+                the admin type a total that silently reverts on save. */}
+            <Field
+              label={t("prodStock")}
+              hint={gridActive ? t("prodStockFromGrid") : t("prodStockHint")}
+            >
               <Input
                 type="number"
                 min={0}
-                value={form.stock}
+                readOnly={gridActive}
+                value={gridActive ? gridTotal : form.stock}
                 onChange={(event) => patch({ stock: Number(event.target.value) })}
+                className={gridActive ? "cursor-not-allowed opacity-60" : undefined}
               />
             </Field>
             <Field label={t("prodStyleCode")}>
@@ -463,15 +493,29 @@ export default function ProductForm() {
         </Panel>
 
         <Panel title={t("prodColors")}>
-          <ColorsEditor colors={form.colors} onChange={(colors) => patch({ colors })} />
+          <ColorsEditor
+            colors={form.colors}
+            stockFromGrid={gridActive}
+            onChange={(colors) => patch({ colors })}
+          />
         </Panel>
 
         <Panel title={t("prodSizes")}>
           <OptionListEditor
             values={form.sizes.map((size) => ({ ...size, image_url: null }))}
+            stockFromGrid={gridActive}
             onChange={(values) =>
               patch({ sizes: values.map(({ value, stock }) => ({ value, stock })) })
             }
+          />
+        </Panel>
+
+        <Panel title={t("prodGrid")}>
+          <StockMatrixEditor
+            colors={form.colors}
+            sizes={form.sizes}
+            matrix={form.stock_matrix}
+            onChange={(stock_matrix) => patch({ stock_matrix })}
           />
         </Panel>
 

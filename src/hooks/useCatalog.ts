@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { sanitizeSearchTerm } from "@/lib/utils";
-import type { Category, Product } from "@/types/db";
+import type { Category, Product, StockCell } from "@/types/db";
 
 const PRODUCT_SELECT = "*, category:categories(*), product_images(*)";
 
@@ -133,10 +133,35 @@ function toOptionValue(entry: unknown): { value: string; image_url: string | nul
   };
 }
 
+/**
+ * The colour x size grid (0013). A cell is only kept when it is fully formed —
+ * a half-written cell would otherwise read as "this combination is offered,
+ * with zero stock", which disables an option that should not have been listed
+ * at all.
+ */
+function toStockCell(entry: unknown): StockCell | null {
+  const cell = (entry ?? {}) as { color?: unknown; size?: unknown; stock?: unknown };
+  if (typeof cell.color !== "string" || !cell.color) return null;
+  if (typeof cell.size !== "string" || !cell.size) return null;
+  return {
+    color: cell.color,
+    size: cell.size,
+    stock:
+      typeof cell.stock === "number" && Number.isFinite(cell.stock)
+        ? Math.max(0, Math.floor(cell.stock))
+        : 0,
+  };
+}
+
 function normalizeProduct(row: unknown): Product {
   const product = row as Product;
   return {
     ...product,
+    stock_matrix: Array.isArray(product.stock_matrix)
+      ? product.stock_matrix
+          .map(toStockCell)
+          .filter((cell): cell is StockCell => cell !== null)
+      : [],
     colors: Array.isArray(product.colors)
       ? product.colors.map((color) => ({
           ...color,

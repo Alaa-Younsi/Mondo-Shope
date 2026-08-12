@@ -28,6 +28,13 @@ export function orderErrorKey(error: unknown): TranslationKey {
    * "something went wrong".
    */
   if (message.includes("ERR_OPTION_REQUIRED")) return "errOptionRequired";
+  /*
+   * The colour and the size both exist, but that PAIRING is not offered — a
+   * cart line saved before the admin retired the combination from the stock
+   * grid, or a hand-crafted request. Distinct from ERR_OPTION_UNAVAILABLE
+   * because the fix is different: re-pick, rather than "that option is gone".
+   */
+  if (message.includes("ERR_COMBO_UNAVAILABLE")) return "errComboUnavailable";
   if (message.includes("ERR_OPTION_UNAVAILABLE")) return "errOptionUnavailable";
   if (message.includes("ERR_OPTION_STOCK")) return "errOptionStock";
   if (message.includes("ERR_STOCK")) return "errStock";
