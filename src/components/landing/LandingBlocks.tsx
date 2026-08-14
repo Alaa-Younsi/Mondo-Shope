@@ -14,6 +14,7 @@ import { useReviews } from "@/hooks/useReviews";
 import { resolveIcon } from "@/lib/icons";
 import { BLOCK_ANCHOR } from "@/lib/landing";
 import { formatPrice } from "@/lib/format";
+import { MAX_QTY_PER_LINE } from "@/lib/limits";
 import { resolveVideo } from "@/lib/video";
 import {
   availableStock,
@@ -509,7 +510,7 @@ export function LandingBlockView({
       const can = optionAvailability(product, choice);
       // Same render-time clamp as the product page: switching to a smaller
       // combination must not leave a stale quantity on the line.
-      const qty = Math.min(selection.quantity, Math.max(1, stockLeft));
+      const qty = Math.min(selection.quantity, Math.max(1, stockLeft), MAX_QTY_PER_LINE);
 
       const variants: VariantSelection[] = product.variants
         .filter((group) => selection.variantPicks[group.name_fr])

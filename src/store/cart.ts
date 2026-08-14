@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { QuantityOffer, VariantSelection } from "@/types/db";
 import { lineTotal } from "@/lib/offers";
+import { MAX_QTY_PER_LINE } from "@/lib/limits";
 import { variantKey } from "@/lib/utils";
 
 export interface CartItem {
@@ -64,7 +65,7 @@ export const useCart = create<CartState>()(
           const merged = Math.min(
             existing.quantity + item.quantity,
             Math.max(1, item.maxStock),
-            20, // place_order rejects any line above 20
+            MAX_QTY_PER_LINE,
           );
           return {
             items: state.items.map((entry) =>
@@ -87,7 +88,7 @@ export const useCart = create<CartState>()(
                   quantity: Math.min(
                     Math.max(1, quantity),
                     Math.max(1, entry.maxStock),
-                    20,
+                    MAX_QTY_PER_LINE,
                   ),
                 }
               : entry,
@@ -96,7 +97,23 @@ export const useCart = create<CartState>()(
 
       clear: () => set({ items: [] }),
     }),
-    { name: "mondo-cart", version: 1 },
+    {
+      name: "mondo-cart",
+      // v2 introduced MAX_QTY_PER_LINE. A cart persisted before it can still
+      // hold a line above the cap, and nothing re-clamps a line the shopper
+      // never touches again — so clamp once on rehydrate.
+      version: 2,
+      migrate: (persisted) => {
+        const state = persisted as { items?: CartItem[] } | undefined;
+        return {
+          ...state,
+          items: (state?.items ?? []).map((item) => ({
+            ...item,
+            quantity: Math.min(Math.max(1, item.quantity), MAX_QTY_PER_LINE),
+          })),
+        } as CartState;
+      },
+    },
   ),
 );
 

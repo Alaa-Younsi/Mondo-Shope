@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/Feedback";
 import { Price } from "@/components/ui/Price";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { cartGoodsTotal, cartSubtotal, lineIdentity, useCart } from "@/store/cart";
+import { MAX_QTY_PER_LINE } from "@/lib/limits";
 import { pick } from "@/lib/utils";
 
 export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -127,7 +128,7 @@ export function CartDrawer({ open, onClose }: { open: boolean; onClose: () => vo
                       <button
                         type="button"
                         onClick={() => updateQuantity(identity, item.quantity + 1)}
-                        disabled={item.quantity >= Math.min(item.maxStock, 20)}
+                        disabled={item.quantity >= Math.min(item.maxStock, MAX_QTY_PER_LINE)}
                         aria-label="+"
                         className="flex h-9 w-9 items-center justify-center text-muted transition-colors hover:text-ink disabled:opacity-40"
                       >

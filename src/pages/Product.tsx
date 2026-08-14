@@ -19,6 +19,7 @@ import { useProduct, useRelatedProducts } from "@/hooks/useCatalog";
 import { useSeo, SITE_URL } from "@/hooks/useSeo";
 import { usePixel } from "@/components/MetaPixelProvider";
 import { useCart } from "@/store/cart";
+import { MAX_QTY_PER_LINE } from "@/lib/limits";
 import { discountPercent, pick } from "@/lib/utils";
 import {
   availableStock,
@@ -163,7 +164,7 @@ export default function Product() {
    * on the very render the selection changed, with no hook ordering to get
    * wrong above the early returns.
    */
-  const qty = Math.min(quantity, Math.max(1, stockLeft));
+  const qty = Math.min(quantity, Math.max(1, stockLeft), MAX_QTY_PER_LINE);
 
   const buildVariants = (): VariantSelection[] =>
     product.variants

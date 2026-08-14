@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { MAX_QTY_PER_LINE } from "@/lib/limits";
 import { cn, pick } from "@/lib/utils";
 import type { ProductColor, ProductSize, ProductVariantGroup } from "@/types/db";
 
@@ -229,7 +230,7 @@ export function QuantityStepper({
   onChange: (next: number) => void;
   max: number;
 }) {
-  const ceiling = Math.max(1, Math.min(max, 20));
+  const ceiling = Math.max(1, Math.min(max, MAX_QTY_PER_LINE));
   return (
     <div className="inline-flex items-center rounded-lg border border-line">
       <button
