@@ -7,7 +7,27 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
 
-    <!-- The first Supabase query and every product image come from here. -->
+    <!-- Applies the saved theme and language before first paint, so a returning
+         light-mode or Arabic visitor never sees the dark/LTR page flash first.
+         Keep the storage keys in step with ThemeProvider / LanguageProvider. -->
+    <script>
+      (function () {
+        try {
+          var root = document.documentElement;
+          var theme = localStorage.getItem("mondo-theme");
+          if (theme === "light" || theme === "dark") root.setAttribute("data-theme", theme);
+          if (localStorage.getItem("mondo-lang") === "ar") {
+            root.lang = "ar";
+            root.dir = "rtl";
+          }
+        } catch (e) {}
+      })();
+    </script>
+
+    <!-- The first catalogue query and every product image come from Supabase;
+         Vite substitutes the project URL at build time. -->
+    <link rel="preconnect" href="%VITE_SUPABASE_URL%" crossorigin />
+    <link rel="dns-prefetch" href="%VITE_SUPABASE_URL%" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { AdminPage, Panel } from "@/components/admin/AdminPage";
 import { ConfirmModal } from "@/components/admin/ConfirmModal";
+import { useAdminToast } from "@/components/admin/AdminToastProvider";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/Form";
@@ -79,6 +80,7 @@ const EMPTY: Draft = {
 
 export default function AdminPixels() {
   const { t } = useLanguage();
+  const toast = useAdminToast();
   const { data, isLoading } = useAllPixelsAdmin();
   const savePixel = useSavePixel();
   const deletePixel = useDeletePixel();
@@ -86,6 +88,13 @@ export default function AdminPixels() {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [pendingDelete, setPendingDelete] = useState<MetaPixel | null>(null);
   const [idError, setIdError] = useState(false);
+
+  /** Opening the editor starts clean: no error left over from the last save. */
+  const openDraft = (next: Draft) => {
+    savePixel.reset();
+    setIdError(false);
+    setDraft(next);
+  };
 
   const onSave = async () => {
     if (!draft) return;
@@ -100,18 +109,35 @@ export default function AdminPixels() {
     setIdError(false);
 
     const { matchText, ...rest } = draft;
-    await savePixel.mutateAsync({
-      ...rest,
-      pixel_id: draft.pixel_id.trim(),
-      match_values:
-        draft.scope === "all"
-          ? []
-          : matchText
-              .split("\n")
-              .map((line) => line.trim())
-              .filter(Boolean),
-    });
-    setDraft(null);
+    try {
+      await savePixel.mutateAsync({
+        ...rest,
+        label: draft.label.trim() || draft.pixel_id.trim(),
+        pixel_id: draft.pixel_id.trim(),
+        match_values:
+          draft.scope === "all"
+            ? []
+            : matchText
+                .split("\n")
+                .map((line) => line.trim())
+                .filter(Boolean),
+      });
+      setDraft(null);
+      toast.success(t("adminSaved"));
+    } catch {
+      // The modal stays open and shows the inline error (savePixel.isError).
+    }
+  };
+
+  const onDelete = async () => {
+    if (!pendingDelete) return;
+    try {
+      await deletePixel.mutateAsync(pendingDelete.id);
+      setPendingDelete(null);
+      toast.success(t("adminDeleted"));
+    } catch {
+      toast.error(t("adminDeleteError"));
+    }
   };
 
   if (isLoading) return <LoadingBlock label={t("loading")} />;
@@ -121,7 +147,7 @@ export default function AdminPixels() {
       title={t("pxTitle")}
       subtitle={t("pxSubtitle")}
       action={
-        <Button size="sm" onClick={() => setDraft(EMPTY)}>
+        <Button size="sm" onClick={() => openDraft(EMPTY)}>
           <Plus size={15} />
           {t("pxNew")}
         </Button>
@@ -166,7 +192,7 @@ export default function AdminPixels() {
                   <button
                     type="button"
                     onClick={() =>
-                      setDraft({
+                      openDraft({
                         id: pixel.id,
                         label: pixel.label,
                         pixel_id: pixel.pixel_id,
@@ -343,11 +369,7 @@ export default function AdminPixels() {
         open={!!pendingDelete}
         busy={deletePixel.isPending}
         onClose={() => setPendingDelete(null)}
-        onConfirm={async () => {
-          if (!pendingDelete) return;
-          await deletePixel.mutateAsync(pendingDelete.id);
-          setPendingDelete(null);
-        }}
+        onConfirm={() => void onDelete()}
         title={t("adminConfirmDelete")}
         text={pendingDelete?.label}
       />

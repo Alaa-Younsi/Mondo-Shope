@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { usePrefersReducedMotion } from "@/hooks/useMediaFlags";
-import { cn, pick } from "@/lib/utils";
+import { cn, highPriorityImageProps, pick } from "@/lib/utils";
 import type { HeroSlide } from "@/types/db";
 
 const INTERVAL = 5000;
@@ -107,8 +107,7 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
       />
 
       <div
-        className="fx-ticks neon-frame relative overflow-hidden border border-line bg-panel"
-        style={{ height: "clamp(340px, 55vh, 560px)" }}
+        className="fx-ticks neon-frame relative h-[clamp(340px,55vh,560px)] overflow-hidden border border-line bg-panel"
         onPointerDown={onPointerDown}
         onPointerUp={onPointerUp}
         onPointerCancel={() => {
@@ -126,6 +125,8 @@ export function HeroSlider({ slides }: { slides: HeroSlide[] }) {
                 alt={title || ""}
                 loading={slideIndex === 0 ? "eager" : "lazy"}
                 decoding="async"
+                // The first slide is the homepage's LCP element.
+                {...(slideIndex === 0 ? highPriorityImageProps : {})}
                 className={cn(
                   "h-full w-full object-cover transition-transform duration-[6000ms] ease-out",
                   active && !reducedMotion ? "scale-105" : "scale-100",

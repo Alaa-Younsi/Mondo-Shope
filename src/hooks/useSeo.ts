@@ -14,6 +14,24 @@ export const SITE_URL = (
   import.meta.env.VITE_SITE_URL || "https://www.mondoshope.shop"
 ).replace(/\/$/, "");
 
+const DEFAULT_IMAGE = `${SITE_URL}/og-image.png`;
+
+/**
+ * The site-wide description shipped in index.html, read once before any route
+ * overwrites it. A page that sets no description of its own falls back to it —
+ * otherwise the previous product's copy lingers in the tags of the next route.
+ */
+let defaultDescription: string | null = null;
+function siteDescription(): string {
+  if (defaultDescription === null) {
+    defaultDescription =
+      document.head
+        .querySelector<HTMLMetaElement>('meta[name="description"]')
+        ?.getAttribute("content") ?? "";
+  }
+  return defaultDescription;
+}
+
 interface SeoOptions {
   title?: string;
   description?: string;
@@ -58,19 +76,22 @@ export function useSeo({ title, description, image, noIndex, jsonLd }: SeoOption
     const previousTitle = document.title;
     if (title) document.title = title;
 
-    if (description) {
-      upsertMeta('meta[name="description"]', "name", "description", description);
-      upsertMeta('meta[property="og:description"]', "property", "og:description", description);
-      upsertMeta('meta[name="twitter:description"]', "name", "twitter:description", description);
-    }
+    // Always written, falling back to the site defaults, so nothing from the
+    // previous route survives into this one.
+    const pageDescription = description || siteDescription();
+    upsertMeta('meta[name="description"]', "name", "description", pageDescription);
+    upsertMeta('meta[property="og:description"]', "property", "og:description", pageDescription);
+    upsertMeta('meta[name="twitter:description"]', "name", "twitter:description", pageDescription);
+
     if (title) {
       upsertMeta('meta[property="og:title"]', "property", "og:title", title);
       upsertMeta('meta[name="twitter:title"]', "name", "twitter:title", title);
     }
-    if (image) {
-      upsertMeta('meta[property="og:image"]', "property", "og:image", image);
-      upsertMeta('meta[name="twitter:image"]', "name", "twitter:image", image);
-    }
+
+    const pageImage = image || DEFAULT_IMAGE;
+    upsertMeta('meta[property="og:image"]', "property", "og:image", pageImage);
+    upsertMeta('meta[property="og:image:secure_url"]', "property", "og:image:secure_url", pageImage);
+    upsertMeta('meta[name="twitter:image"]', "name", "twitter:image", pageImage);
 
     const url = `${SITE_URL}${pathname}`;
     upsertLink("canonical", url);

@@ -96,7 +96,7 @@ export default function AdminProducts() {
       {products.length === 0 ? (
         <EmptyState title={t("prodNone")} />
       ) : (
-        <TableScroll minWidth="46rem">
+        <TableScroll minWidth="lg">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line font-mono text-[11px] uppercase tracking-wider text-muted">

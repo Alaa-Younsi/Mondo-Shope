@@ -156,7 +156,7 @@ export default function Dashboard() {
             {stats.recent.length === 0 ? (
               <EmptyState title={t("dashNoOrders")} className="border-none bg-transparent py-8" />
             ) : (
-              <TableScroll minWidth="34rem">
+              <TableScroll minWidth="sm">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-line text-start font-mono text-[11px] uppercase tracking-wider text-muted">

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Discount, Price } from "@/components/ui/Price";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { discountPercent, pick } from "@/lib/utils";
+import { isSoldOut } from "@/lib/variantStock";
 import type { Product } from "@/types/db";
 
 /**
@@ -18,7 +19,9 @@ export function ProductCard({ product }: { product: Product }) {
   const name = pick(lang, product, "name");
   const image = product.product_images?.[0]?.url ?? null;
   const off = discountPercent(product.price, product.compare_at_price);
-  const soldOut = product.stock <= 0;
+  // Same rule as the product page: a shirt whose every size is gone is sold
+  // out even while the product total still reads above zero.
+  const soldOut = isSoldOut(product);
   const category = product.category ? pick(lang, product.category, "name") : null;
 
   return (

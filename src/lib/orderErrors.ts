@@ -3,10 +3,10 @@ import type { TranslationKey } from "@/i18n/translations";
 /**
  * Maps a place_order() exception message to a translation key.
  *
- * Both Checkout.tsx and InlineCheckout.tsx (and the landing-page order form)
- * go through this one helper: a customer needs to know whether the cart was
- * empty, the stock ran out, or their wilaya is not served — one generic string
- * for all three is not actionable.
+ * The one CheckoutForm (cart checkout, product buy-now and the landing-page
+ * order form) goes through this helper: a customer needs to know whether the
+ * cart was empty, the stock ran out, or their wilaya is not served — one
+ * generic string for all three is not actionable.
  */
 export function orderErrorKey(error: unknown): TranslationKey {
   const message =
@@ -40,6 +40,9 @@ export function orderErrorKey(error: unknown): TranslationKey {
   if (message.includes("ERR_STOCK")) return "errStock";
   if (message.includes("ERR_WILAYA_DISABLED")) return "errWilayaDisabled";
   if (message.includes("ERR_RATE_LIMIT")) return "errRateLimit";
+  // Raised by the order_items quantity trigger (0014) — the server-side half of
+  // MAX_QTY_PER_LINE, reachable only by a request that bypassed the stepper.
+  if (message.includes("ERR_QTY_LIMIT")) return "errQtyLimit";
   if (message.includes("ERR_INVALID_INPUT")) return "errInvalidInput";
   return "genericError";
 }

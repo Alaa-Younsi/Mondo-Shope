@@ -91,7 +91,7 @@ export default function AdminOrders() {
       {list.length === 0 ? (
         <EmptyState title={t("ordNone")} />
       ) : (
-        <TableScroll minWidth="52rem">
+        <TableScroll minWidth="xl">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line font-mono text-[11px] uppercase tracking-wider text-muted">

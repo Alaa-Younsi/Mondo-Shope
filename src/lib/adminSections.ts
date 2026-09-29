@@ -15,7 +15,8 @@ import type { TranslationKey } from "@/i18n/translations";
 
 /**
  * Single source of truth for the admin sidebar and the route table.
- * Adding a page means adding one row here plus its <Route> in App.tsx.
+ * Adding a page means adding one row here plus its <Route> in
+ * pages/admin/AdminApp.tsx.
  */
 export interface AdminSection {
   key: string;

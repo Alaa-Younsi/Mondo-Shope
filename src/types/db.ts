@@ -284,6 +284,20 @@ export interface MetaPixel {
   updated_at: string;
 }
 
+/** The columns the storefront may read (0014 column grants) — no admin notes. */
+export type PublicMetaPixel = Pick<
+  MetaPixel,
+  | "id"
+  | "pixel_id"
+  | "active"
+  | "scope"
+  | "match_values"
+  | "events"
+  | "test_event_code"
+  | "currency"
+  | "sort_order"
+>;
+
 export interface AdminUser {
   user_id: string;
   email: string | null;

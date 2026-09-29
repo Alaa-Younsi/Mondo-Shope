@@ -662,11 +662,15 @@ function CountdownBlock({ block, radius }: { block: LandingBlock; radius: string
   const target = useMemo(() => (endsAt ? new Date(endsAt).getTime() : null), [endsAt]);
   const [now, setNow] = useState(() => Date.now());
 
+  const expiredAlready = target !== null && now >= target;
+
   useEffect(() => {
-    if (!target) return;
+    // Nothing left to count once the deadline passes — stop re-rendering the
+    // whole block every second for a static "offer ended" line.
+    if (!target || expiredAlready) return;
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
-  }, [target]);
+  }, [target, expiredAlready]);
 
   if (!data || !target || Number.isNaN(target)) return null;
 

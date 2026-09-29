@@ -1,6 +1,8 @@
 {
   "name": "mondo-shope",
   "private": true,
+  "license": "UNLICENSED",
+  "author": "Alaa Younsi",
   "version": "1.0.0",
   "type": "module",
   "scripts": {

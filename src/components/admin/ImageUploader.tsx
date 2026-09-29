@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { ImagePlus, Loader2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImagePlus, Loader2, X } from "lucide-react";
 import { useAdminUpload } from "@/hooks/useAdminUpload";
 import { useAdminToast } from "./AdminToastProvider";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -151,22 +151,30 @@ export function MultiImageUploader({ urls, onChange, prefix = "" }: MultiProps) 
             >
               <X size={12} />
             </button>
-            <div className="absolute start-1 top-1 flex gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
-              <button
-                type="button"
-                onClick={() => move(index, index - 1)}
-                className="rounded bg-black/70 px-1.5 py-1 text-[10px] text-white"
-              >
-                ‹
-              </button>
-              <button
-                type="button"
-                onClick={() => move(index, index + 1)}
-                className="rounded bg-black/70 px-1.5 py-1 text-[10px] text-white"
-              >
-                ›
-              </button>
-            </div>
+            {/* Always visible on touch screens — a hover-only control cannot
+                be reached on the phone the owner mostly manages the shop from. */}
+            {urls.length > 1 && (
+              <div className="absolute start-1 top-1 flex gap-0.5 transition-opacity [@media(hover:hover)]:opacity-0 [@media(hover:hover)]:group-focus-within:opacity-100 [@media(hover:hover)]:group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => move(index, index - 1)}
+                  disabled={index === 0}
+                  aria-label={t("previous")}
+                  className="rounded bg-black/70 p-1 text-white disabled:opacity-40"
+                >
+                  <ChevronLeft size={12} className="rtl:rotate-180" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => move(index, index + 1)}
+                  disabled={index === urls.length - 1}
+                  aria-label={t("next")}
+                  className="rounded bg-black/70 p-1 text-white disabled:opacity-40"
+                >
+                  <ChevronRight size={12} className="rtl:rotate-180" />
+                </button>
+              </div>
+            )}
           </div>
         ))}
 

@@ -1,4 +1,4 @@
-import type { MetaPixel, PixelEventKey } from "@/types/db";
+import type { PixelEventKey, PublicMetaPixel } from "@/types/db";
 
 /**
  * Meta pixel runtime. Two rules shape everything here:
@@ -93,7 +93,7 @@ function ensureFbq(): FbqFn | null {
  * An EMPTY match_values on a scoped pixel means "every page of that kind" —
  * one pixel for all product pages. The opposite reading makes the row useless.
  */
-export function matchPixels(pixels: MetaPixel[], ctx: PixelContext): MetaPixel[] {
+export function matchPixels(pixels: PublicMetaPixel[], ctx: PixelContext): PublicMetaPixel[] {
   const forced = new Set(ctx.extraPixelIds ?? []);
 
   return pixels.filter((pixel) => {
@@ -122,7 +122,7 @@ export function matchPixels(pixels: MetaPixel[], ctx: PixelContext): MetaPixel[]
   });
 }
 
-export function initPixels(pixels: MetaPixel[]): void {
+export function initPixels(pixels: PublicMetaPixel[]): void {
   const fbq = ensureFbq();
   if (!fbq) return;
 
@@ -159,7 +159,7 @@ function hasValidValue(params?: PixelParams): boolean {
 }
 
 export function trackEvent(
-  pixels: MetaPixel[],
+  pixels: PublicMetaPixel[],
   key: PixelEventKey,
   params?: PixelParams,
   eventId?: string,

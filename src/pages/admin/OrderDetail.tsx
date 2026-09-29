@@ -33,7 +33,11 @@ export default function OrderDetail() {
     setUpdating(false);
 
     if (error) {
-      toast.error(t("adminSaveError"));
+      toast.error(
+        error.message.includes("ERR_ORDER_CANCELLED")
+          ? t("ordCancelledLocked")
+          : t("adminSaveError"),
+      );
       return;
     }
 
@@ -51,6 +55,8 @@ export default function OrderDetail() {
       </AdminPage>
     );
   }
+
+  const cancelled = order.status === "cancelled";
 
   return (
     <AdminPage
@@ -81,7 +87,15 @@ export default function OrderDetail() {
                   <li key={item.id} className="flex gap-3">
                     <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-line bg-panel-2">
                       {item.image_url && (
-                        <img src={item.image_url} alt="" className="h-full w-full object-cover" />
+                        <img
+                          src={item.image_url}
+                          alt=""
+                          width={64}
+                          height={64}
+                          loading="lazy"
+                          decoding="async"
+                          className="h-full w-full object-cover"
+                        />
                       )}
                     </div>
                     <div className="min-w-0 flex-1">
@@ -129,7 +143,10 @@ export default function OrderDetail() {
                 <button
                   key={status}
                   type="button"
-                  disabled={updating}
+                  // Cancelling already put the units back on sale; reopening
+                  // the order would sell them twice. The database refuses the
+                  // transition too (0014) — this just says so up front.
+                  disabled={updating || cancelled}
                   onClick={() => void setStatus(status)}
                   className={cn(
                     "rounded-lg border px-4 py-2.5 text-sm transition-colors disabled:opacity-50",
@@ -142,7 +159,9 @@ export default function OrderDetail() {
                 </button>
               ))}
             </div>
-            <p className="mt-3 text-xs leading-relaxed text-muted">{t("ordRestockNote")}</p>
+            <p className="mt-3 text-xs leading-relaxed text-muted">
+              {cancelled ? t("ordCancelledLocked") : t("ordRestockNote")}
+            </p>
           </Panel>
         </div>
 

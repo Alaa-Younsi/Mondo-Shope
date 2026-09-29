@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { readStorage, writeStorage } from "@/lib/storage";
 
 export type Theme = "dark" | "light";
 
@@ -22,7 +23,10 @@ const STORAGE_KEY = "mondo-theme";
 
 function readInitialTheme(): Theme {
   if (typeof window === "undefined") return "dark";
-  const stored = window.localStorage.getItem(STORAGE_KEY);
+  // Keep in step with the pre-paint script in index.html, which applies the
+  // stored theme before React loads so a light-mode visitor never sees a
+  // flash of the dark theme.
+  const stored = readStorage(STORAGE_KEY);
   if (stored === "light" || stored === "dark") return stored;
   // Dark is the brand, so it is the default for every first-time visitor —
   // deliberately NOT following prefers-color-scheme, which used to hand a
@@ -40,7 +44,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document
       .querySelector('meta[name="theme-color"]')
       ?.setAttribute("content", theme === "dark" ? "#0a0a0b" : "#f0e3c6");
-    window.localStorage.setItem(STORAGE_KEY, theme);
+    writeStorage(STORAGE_KEY, theme);
   }, [theme]);
 
   const setTheme = useCallback((next: Theme) => setThemeState(next), []);

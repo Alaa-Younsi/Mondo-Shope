@@ -46,10 +46,19 @@ export function MetaPixelProvider({ children }: { children: ReactNode }) {
   // poisons every campaign's data with staff traffic.
   const isAdmin = pathname.startsWith("/admin");
 
-  // A route that unmounts must not leave its slug behind for the next one.
-  useEffect(() => {
+  /*
+   * A route that unmounts must not leave its slug behind for the next one.
+   *
+   * Reset DURING RENDER, not in an effect: child effects run before parent
+   * effects, so a page whose data is already cached registers its slug first
+   * and a parent-level reset effect would then wipe it — product- and
+   * landing-scoped pixels silently never fire on a revisited page.
+   */
+  const [contextPath, setContextPath] = useState(pathname);
+  if (contextPath !== pathname) {
+    setContextPath(pathname);
     setRouteContext(EMPTY_CONTEXT);
-  }, [pathname]);
+  }
 
   const matched = useMemo(() => {
     if (isAdmin || !pixels || pixels.length === 0) return [];

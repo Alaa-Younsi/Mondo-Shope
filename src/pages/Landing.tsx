@@ -13,7 +13,7 @@ import { useCategories, useFeaturedProducts } from "@/hooks/useCatalog";
 import { useReviews } from "@/hooks/useReviews";
 import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { usePrefersReducedMotion } from "@/hooks/useMediaFlags";
-import { useSeo, SITE_URL } from "@/hooks/useSeo";
+import { useSeo } from "@/hooks/useSeo";
 import { pick } from "@/lib/utils";
 import type { HeroSlide, Product } from "@/types/db";
 
@@ -151,17 +151,11 @@ export default function Landing() {
   const { data: settings } = useStoreSettings();
   const reducedMotion = usePrefersReducedMotion();
 
+  // The site-wide WebSite + Store JSON-LD already ships in index.html; a second
+  // page-scoped Store here only gave Google two conflicting entities.
   useSeo({
     title: `${t("heroTitle")} | ${t("brandName")}`,
     description: t("heroSubtitle"),
-    jsonLd: {
-      "@context": "https://schema.org",
-      "@type": "Store",
-      name: t("brandName"),
-      url: `${SITE_URL}/`,
-      areaServed: "Algérie",
-      paymentAccepted: "Cash on delivery",
-    },
   });
 
   const adminSlides = settings?.hero_slides ?? [];
@@ -200,8 +194,7 @@ export default function Landing() {
               variants={RISE}
               transition={{ duration: 0.6 }}
               data-text={t("heroTitle")}
-              className="glitch-text neon-text mb-2 font-display font-black uppercase leading-none text-ink"
-              style={{ fontSize: "clamp(38px, 5.5vw, 76px)" }}
+              className="glitch-text neon-text mb-2 font-display text-[clamp(38px,5.5vw,76px)] font-black uppercase leading-none text-ink"
             >
               {t("heroTitle")}
             </motion.h1>
@@ -225,8 +218,12 @@ export default function Landing() {
                 {t("heroCta")}
                 <ChevronRight size={20} className="rtl:rotate-180" />
               </ButtonLink>
+              {/* "Our categories" jumps to the categories section below; with
+                  none configured yet, the shop's own category chips are the
+                  next best destination. */}
               <ButtonLink
-                to="/shop"
+                to={categoryCount > 0 ? "#categories" : "/shop"}
+                external={categoryCount > 0}
                 variant="secondary"
                 size="lg"
                 className="w-full sm:w-auto"
@@ -270,8 +267,7 @@ export default function Landing() {
               // layout from collapsing into a half-empty hero.
               <div
                 aria-hidden
-                className="fx-ticks relative border border-line bg-panel"
-                style={{ height: "clamp(340px, 55vh, 560px)" }}
+                className="fx-ticks relative h-[clamp(340px,55vh,560px)] border border-line bg-panel"
               >
                 <div className="fx-grid h-full w-full opacity-30" />
               </div>
@@ -299,7 +295,10 @@ export default function Landing() {
 
       {/* Categories ------------------------------------------------------- */}
       {categoryCount > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6 lg:px-8">
+        <section
+          id="categories"
+          className="mx-auto max-w-7xl scroll-mt-20 px-4 py-20 sm:px-6 lg:px-8"
+        >
           <SectionHeading
             title={t("categoriesTitle")}
             subtitle={t("categoriesSubtitle")}

@@ -128,6 +128,10 @@ export default function ProductForm() {
   const [imageUrls, setImageUrls] = useState<string[]>([]);
   const [loadFailed, setLoadFailed] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Set once a NEW product's row has been inserted, so a retried save after a
+  // failed image write updates that row instead of creating a second product.
+  const [createdId, setCreatedId] = useState<string | null>(null);
+  const existingId = isNew ? createdId : id;
 
   const { data: loaded, isLoading, isError } = useQuery({
     queryKey: ["admin-product", id],
@@ -186,9 +190,10 @@ export default function ProductForm() {
 
     setSaving(true);
     try {
-      const slug = form.slug.trim()
-        ? await uniqueSlug(form.slug, isNew ? undefined : id)
-        : await uniqueSlug(form.name_fr || form.name_ar, isNew ? undefined : id);
+      const slug = await uniqueSlug(
+        form.slug.trim() || form.name_fr || form.name_ar,
+        existingId ?? undefined,
+      );
 
       const payload: ProductFormState = {
         ...form,
@@ -199,6 +204,8 @@ export default function ProductForm() {
             ? null
             : Number(form.compare_at_price) || null,
         stock: Math.max(0, Math.floor(Number(form.stock) || 0)),
+        details_fr: form.details_fr.map((line) => line.trim()).filter(Boolean),
+        details_ar: form.details_ar.map((line) => line.trim()).filter(Boolean),
         quantity_offers: sanitizeOffers(form.quantity_offers),
         // A half-filled group the admin abandoned must not reach the storefront
         // as a nameless or empty picker.
@@ -223,9 +230,9 @@ export default function ProductForm() {
         ),
       };
 
-      let productId = id;
+      let productId = existingId;
 
-      if (isNew) {
+      if (!productId) {
         const { data, error } = await supabase
           .from("products")
           .insert(payload)
@@ -236,8 +243,11 @@ export default function ProductForm() {
           return;
         }
         productId = (data as { id: string }).id;
+        // The row exists from here on. If the image write below fails, the
+        // retry must UPDATE this product rather than insert a duplicate.
+        setCreatedId(productId);
       } else {
-        const { error } = await supabase.from("products").update(payload).eq("id", id!);
+        const { error } = await supabase.from("products").update(payload).eq("id", productId!);
         if (error) {
           toast.error(t("adminSaveError"));
           return;
@@ -350,9 +360,9 @@ export default function ProductForm() {
                 rows={4}
                 value={form.details_fr.join("\n")}
                 onChange={(event) =>
-                  patch({
-                    details_fr: event.target.value.split("\n").filter((line) => line.trim()),
-                  })
+                  // Blank lines are kept while typing — filtering them here
+                  // swallowed every Enter keystroke. They are dropped on save.
+                  patch({ details_fr: event.target.value.split("\n") })
                 }
               />
             </Field>
@@ -362,9 +372,7 @@ export default function ProductForm() {
                 dir="rtl"
                 value={form.details_ar.join("\n")}
                 onChange={(event) =>
-                  patch({
-                    details_ar: event.target.value.split("\n").filter((line) => line.trim()),
-                  })
+                  patch({ details_ar: event.target.value.split("\n") })
                 }
               />
             </Field>

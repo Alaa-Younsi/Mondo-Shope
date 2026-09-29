@@ -195,6 +195,7 @@ export const translations = {
     errWilayaDisabled: "Nous ne livrons pas encore dans cette wilaya.",
     errInvalidInput: "Certaines informations sont invalides. Vérifiez le formulaire.",
     errRateLimit: "Trop de commandes avec ce numéro. Réessayez plus tard.",
+    errQtyLimit: "Maximum 3 pièces par article dans une même commande.",
 
     // ---- order confirmation ------------------------------------------------
     orderConfirmedTitle: "Commande enregistrée",
@@ -369,6 +370,8 @@ export const translations = {
     ordDeleteAllConfirm: "Oui, tout supprimer",
     ordDeleting: "Suppression…",
     ordRestockNote: "Annuler une commande remet automatiquement le stock à jour.",
+    ordCancelledLocked:
+      "Commande annulée : son stock a été remis en vente, son statut ne peut plus changer.",
 
     // ---- admin: delivery ---------------------------------------------------
     delTitle: "Prix de livraison",
@@ -392,9 +395,6 @@ export const translations = {
 
     // ---- admin: settings ---------------------------------------------------
     setTitle: "Paramètres de la boutique",
-    setShippingFee: "Frais de livraison par défaut",
-    setShippingFeeHint:
-      "Utilisé uniquement comme repère. Le vrai prix vient de la table des wilayas.",
     setFreeShip: "Livraison offerte à partir de",
     setFreeShipHint:
       "Laissez vide pour désactiver l'offre. Le serveur et l'affichage utilisent la même règle.",
@@ -847,6 +847,7 @@ export const translations = {
     errWilayaDisabled: "لا نوصل إلى هذه الولاية حاليًا.",
     errInvalidInput: "بعض المعلومات غير صحيحة. تحقق من النموذج.",
     errRateLimit: "طلبات كثيرة بهذا الرقم. حاول لاحقًا.",
+    errQtyLimit: "الحد الأقصى 3 قطع لكل منتج في الطلب الواحد.",
 
     // ---- order confirmation ------------------------------------------------
     orderConfirmedTitle: "تم تسجيل طلبك",
@@ -1017,6 +1018,7 @@ export const translations = {
     ordDeleteAllConfirm: "نعم، احذف الكل",
     ordDeleting: "جاري الحذف…",
     ordRestockNote: "إلغاء طلب يعيد الكمية إلى المخزون تلقائيًا.",
+    ordCancelledLocked: "طلب ملغى: أُعيد مخزونه إلى البيع ولا يمكن تغيير حالته بعد الآن.",
 
     // ---- admin: delivery ---------------------------------------------------
     delTitle: "أسعار التوصيل",
@@ -1040,9 +1042,6 @@ export const translations = {
 
     // ---- admin: settings ---------------------------------------------------
     setTitle: "إعدادات المتجر",
-    setShippingFee: "سعر التوصيل الافتراضي",
-    setShippingFeeHint:
-      "يُستعمل كمرجع فقط. السعر الحقيقي يأتي من جدول الولايات.",
     setFreeShip: "التوصيل مجاني ابتداءً من",
     setFreeShipHint:
       "اتركه فارغًا لتعطيل العرض. الخادم والعرض يستعملان القاعدة نفسها.",

@@ -17,6 +17,3 @@ export const supabase = createClient(url, anonKey, {
     detectSessionInUrl: false,
   },
 });
-
-/** Origin of the Supabase project — used for the preconnect hint. */
-export const SUPABASE_ORIGIN = new URL(url).origin;

@@ -17,6 +17,8 @@ import type { Category } from "@/types/db";
 
 type Draft = {
   id: string | null;
+  /** Kept as-is on edit: the slug is the public /shop?categorie= URL. */
+  slug: string | null;
   name_fr: string;
   name_ar: string;
   description_fr: string;
@@ -27,6 +29,7 @@ type Draft = {
 
 const EMPTY: Draft = {
   id: null,
+  slug: null,
   name_fr: "",
   name_ar: "",
   description_fr: "",
@@ -34,6 +37,25 @@ const EMPTY: Draft = {
   image_url: null,
   sort_order: 0,
 };
+
+/**
+ * A free slug for a NEW category. `slug` is unique, so two categories with the
+ * same name (or an Arabic-only name, which slugifies to "") must not collide.
+ */
+async function uniqueCategorySlug(name: string): Promise<string> {
+  const root = slugify(name) || `categorie-${Date.now().toString(36)}`;
+  let candidate = root;
+  for (let suffix = 2; suffix < 50; suffix++) {
+    const { data, error } = await supabase
+      .from("categories")
+      .select("id")
+      .eq("slug", candidate)
+      .limit(1);
+    if (error || !data || data.length === 0) return candidate;
+    candidate = `${root}-${suffix}`;
+  }
+  return `${root}-${Date.now().toString(36)}`;
+}
 
 export default function AdminCategories() {
   const { t } = useLanguage();
@@ -64,13 +86,15 @@ export default function AdminCategories() {
 
     setSaving(true);
     const values = {
-      name_fr: draft.name_fr,
-      name_ar: draft.name_ar,
-      description_fr: draft.description_fr || null,
-      description_ar: draft.description_ar || null,
+      name_fr: draft.name_fr.trim(),
+      name_ar: draft.name_ar.trim(),
+      description_fr: draft.description_fr.trim() || null,
+      description_ar: draft.description_ar.trim() || null,
       image_url: draft.image_url,
       sort_order: Number(draft.sort_order) || 0,
-      slug: slugify(draft.name_fr || draft.name_ar) || `cat-${Date.now().toString(36)}`,
+      // Renaming a category must not move its URL: every shared or indexed
+      // /shop?categorie=<slug> link would silently stop filtering.
+      slug: draft.slug ?? (await uniqueCategorySlug(draft.name_fr || draft.name_ar)),
     };
 
     const { error } = draft.id
@@ -144,6 +168,7 @@ export default function AdminCategories() {
                     onClick={() =>
                       setDraft({
                         id: category.id,
+                        slug: category.slug,
                         name_fr: category.name_fr,
                         name_ar: category.name_ar,
                         description_fr: category.description_fr ?? "",

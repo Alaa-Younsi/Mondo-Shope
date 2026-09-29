@@ -29,8 +29,14 @@ const SITE_URL = (process.env.VITE_SITE_URL || "https://www.mondoshope.shop").re
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
+/**
+ * Link-preview scrapers ONLY. Search engines are deliberately absent: Googlebot
+ * and Bingbot execute JavaScript and must index the real page — its body copy,
+ * internal links and Product JSON-LD. Handing them this two-line card instead
+ * would index a stub and serve crawlers different content than shoppers see.
+ */
 const CRAWLER_RE =
-  /facebookexternalhit|facebookcatalog|WhatsApp|Twitterbot|TelegramBot|Discordbot|Slackbot|LinkedInBot|Pinterest|SkypeUriPreview|redditbot|Googlebot|bingbot|Applebot|vkShare|instagram/i;
+  /facebookexternalhit|facebookcatalog|WhatsApp|Twitterbot|TelegramBot|Discordbot|Slackbot|LinkedInBot|Pinterest|SkypeUriPreview|redditbot|vkShare|instagram/i;
 
 /** Every interpolated field goes through this. */
 function escapeHtml(value: unknown): string {

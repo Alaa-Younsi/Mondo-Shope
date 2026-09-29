@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { translations, type TranslationKey } from "./translations";
+import { readStorage, writeStorage } from "@/lib/storage";
 import type { Lang } from "@/types/db";
 
 type Dir = "ltr" | "rtl";
@@ -26,7 +27,8 @@ const STORAGE_KEY = "mondo-lang";
 
 function readInitialLang(): Lang {
   if (typeof window === "undefined") return "fr";
-  const stored = window.localStorage.getItem(STORAGE_KEY);
+  // Mirrored by the pre-paint script in index.html (lang + dir before first paint).
+  const stored = readStorage(STORAGE_KEY);
   return stored === "ar" ? "ar" : "fr";
 }
 
@@ -38,7 +40,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = dir;
-    window.localStorage.setItem(STORAGE_KEY, lang);
+    writeStorage(STORAGE_KEY, lang);
   }, [lang, dir]);
 
   const setLang = useCallback((next: Lang) => setLangState(next), []);

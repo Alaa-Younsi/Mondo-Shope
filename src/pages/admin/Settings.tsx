@@ -12,12 +12,17 @@ import { useStoreSettings } from "@/hooks/useStoreSettings";
 import { supabase } from "@/lib/supabase";
 import type { HeroSlide, StoreSettings } from "@/types/db";
 
-/** Editable columns only — never spread the loaded row into the update. */
-type SettingsFormState = Omit<StoreSettings, "id" | "updated_at">;
+/**
+ * Editable columns only — never spread the loaded row into the update.
+ *
+ * `shipping_fee` is excluded on purpose: nothing prices from it. Delivery is
+ * charged per wilaya (delivery_prices) by place_order(), so an editable
+ * "default fee" here only invited the owner to change a number with no effect.
+ */
+type SettingsFormState = Omit<StoreSettings, "id" | "updated_at" | "shipping_fee">;
 
 function toFormState(row: StoreSettings): SettingsFormState {
   return {
-    shipping_fee: Number(row.shipping_fee),
     free_ship_threshold:
       row.free_ship_threshold === null ? null : Number(row.free_ship_threshold),
     store_phone: row.store_phone,
@@ -125,15 +130,6 @@ export default function AdminSettings() {
       <div className="space-y-6">
         <Panel title={t("shipping")}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={t("setShippingFee")} hint={t("setShippingFeeHint")}>
-              <Input
-                type="number"
-                min={0}
-                dir="ltr"
-                value={form.shipping_fee}
-                onChange={(event) => patch({ shipping_fee: Number(event.target.value) })}
-              />
-            </Field>
             <Field
               label={t("setFreeShip")}
               hint={

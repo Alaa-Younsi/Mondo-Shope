@@ -1,5 +1,5 @@
-import { lazy, Suspense, useEffect } from "react";
-import { BrowserRouter, Outlet, Route, Routes } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Outlet, Route, Routes, useParams } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "@/theme/ThemeProvider";
 import { LanguageProvider } from "@/i18n/LanguageProvider";
@@ -9,17 +9,17 @@ import { Footer } from "@/components/layout/Footer";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { Scanlines } from "@/components/effects/Scanlines";
 import { LoadingBlock } from "@/components/ui/Feedback";
-import { SUPABASE_ORIGIN } from "@/lib/supabase";
 
 import Landing from "@/pages/Landing";
 import Shop from "@/pages/Shop";
 import Product from "@/pages/Product";
-import Checkout from "@/pages/Checkout";
-import OrderConfirmation from "@/pages/OrderConfirmation";
 import NotFound from "@/pages/NotFound";
 
-// Campaign pages and the whole dashboard are their own bundles: neither belongs
-// in the storefront's first paint.
+// Pages nobody lands on cold — the checkout and its confirmation — plus
+// campaign pages and the whole dashboard are their own bundles: none of them
+// belongs in the storefront's first paint.
+const Checkout = lazy(() => import("@/pages/Checkout"));
+const OrderConfirmation = lazy(() => import("@/pages/OrderConfirmation"));
 const LandingPageView = lazy(() => import("@/pages/LandingPageView"));
 const AdminApp = lazy(() => import("@/pages/admin/AdminApp"));
 
@@ -35,17 +35,15 @@ const queryClient = new QueryClient({
   },
 });
 
-/** The first query and every product image come from the Supabase origin. */
-function Preconnect() {
-  useEffect(() => {
-    if (document.querySelector(`link[rel="preconnect"][href="${SUPABASE_ORIGIN}"]`)) return;
-    const link = document.createElement("link");
-    link.rel = "preconnect";
-    link.href = SUPABASE_ORIGIN;
-    link.crossOrigin = "";
-    document.head.appendChild(link);
-  }, []);
-  return null;
+/**
+ * Keyed by slug so moving from one product to another (a related-product card)
+ * remounts the page. Reusing the instance would carry the previous product's
+ * colour, size, quantity and gallery index over — a colour label the new
+ * product does not have, which place_order() then rejects.
+ */
+function ProductRoute() {
+  const { slug } = useParams<{ slug: string }>();
+  return <Product key={slug} />;
 }
 
 function StorefrontLayout() {
@@ -53,7 +51,9 @@ function StorefrontLayout() {
     <div className="flex min-h-dvh flex-col">
       <Header />
       <main className="flex-1">
-        <Outlet />
+        <Suspense fallback={<LoadingBlock />}>
+          <Outlet />
+        </Suspense>
       </main>
       <Footer />
     </div>
@@ -67,7 +67,6 @@ export default function App() {
         <LanguageProvider>
           <BrowserRouter>
             <MetaPixelProvider>
-              <Preconnect />
               <ScrollToTop />
               <Scanlines />
 
@@ -75,7 +74,7 @@ export default function App() {
                 <Route element={<StorefrontLayout />}>
                   <Route index element={<Landing />} />
                   <Route path="shop" element={<Shop />} />
-                  <Route path="produit/:slug" element={<Product />} />
+                  <Route path="produit/:slug" element={<ProductRoute />} />
                   <Route path="checkout" element={<Checkout />} />
                   <Route path="commande/:orderNumber" element={<OrderConfirmation />} />
                   {/* Ranked below every literal path, so it cannot shadow

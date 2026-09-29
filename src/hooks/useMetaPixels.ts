@@ -1,6 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
-import type { MetaPixel } from "@/types/db";
+import type { MetaPixel, PublicMetaPixel } from "@/types/db";
+
+const PUBLIC_PIXEL_COLUMNS =
+  "id, pixel_id, active, scope, match_values, events, test_event_code, currency, sort_order";
 
 /**
  * Storefront: the active pixels.
@@ -14,14 +17,17 @@ export function useActivePixels() {
     queryKey: ["active-pixels"],
     staleTime: 60 * 60 * 1000,
     retry: 0,
-    queryFn: async (): Promise<MetaPixel[]> => {
+    queryFn: async (): Promise<PublicMetaPixel[]> => {
+      // Explicit columns: anon may only read these (0014 column grants).
+      // `label`, `notes` and the timestamps are admin-only, and a select("*")
+      // from the storefront would be refused outright.
       const { data, error } = await supabase
         .from("meta_pixels")
-        .select("*")
+        .select(PUBLIC_PIXEL_COLUMNS)
         .eq("active", true)
         .order("sort_order", { ascending: true });
       if (error) throw error;
-      return normalize(data);
+      return normalize<PublicMetaPixel>(data);
     },
   });
 }
@@ -36,7 +42,7 @@ export function useAllPixelsAdmin() {
         .order("sort_order", { ascending: true })
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return normalize(data);
+      return normalize<MetaPixel>(data);
     },
   });
 }
@@ -87,9 +93,9 @@ export function useDeletePixel() {
   });
 }
 
-function normalize(rows: unknown): MetaPixel[] {
+function normalize<T extends PublicMetaPixel>(rows: unknown): T[] {
   if (!Array.isArray(rows)) return [];
-  return (rows as MetaPixel[]).map((row) => ({
+  return (rows as T[]).map((row) => ({
     ...row,
     match_values: Array.isArray(row.match_values) ? row.match_values : [],
     events: (row.events ?? {}) as MetaPixel["events"],

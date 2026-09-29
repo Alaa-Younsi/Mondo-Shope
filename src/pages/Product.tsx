@@ -9,7 +9,9 @@ import {
   SizePicker,
 } from "@/components/product/VariantPickers";
 import { ProductCard } from "@/components/product/ProductCard";
-import { CheckoutForm, type CheckoutLine } from "@/components/checkout/CheckoutForm";
+import type { CheckoutLine } from "@/components/checkout/CheckoutForm";
+import { LazyCheckoutForm } from "@/components/checkout/LazyCheckoutForm";
+import { loadCheckoutForm } from "@/components/checkout/loadCheckoutForm";
 import { Button } from "@/components/ui/Button";
 import { Badge, SectionHeading } from "@/components/ui/Badge";
 import { EmptyState, LoadingBlock } from "@/components/ui/Feedback";
@@ -76,6 +78,12 @@ export default function Product() {
     return [...base, ...colorImages];
   }, [images, colors, lang]);
 
+  // The buy-now form is below the fold and code-split; start fetching it now so
+  // it is ready long before the shopper scrolls to it.
+  useEffect(() => {
+    void loadCheckoutForm();
+  }, []);
+
   // Register this route's slug so landing/product-scoped pixels match it.
   useEffect(() => {
     if (product?.slug) pixel.setContext({ productSlug: product.slug });
@@ -118,15 +126,16 @@ export default function Product() {
           description,
           image: images.map((image) => image.url),
           sku: product.style_code ?? product.slug,
+          brand: { "@type": "Brand", name: t("brandName") },
           offers: {
             "@type": "Offer",
             priceCurrency: "DZD",
             price: Number(product.price),
             url: `${SITE_URL}/produit/${product.slug}`,
-            availability:
-              product.stock > 0
-                ? "https://schema.org/InStock"
-                : "https://schema.org/OutOfStock",
+            availability: isSoldOut(product)
+              ? "https://schema.org/OutOfStock"
+              : "https://schema.org/InStock",
+            seller: { "@type": "Organization", name: t("brandName") },
           },
         }
       : undefined,
@@ -403,7 +412,7 @@ export default function Product() {
         <section className="mt-16 scroll-mt-24" id="commander">
           <div className="mx-auto max-w-2xl rounded-2xl border border-line bg-panel p-6 sm:p-8">
             <SectionHeading title={t("buyNow")} subtitle={t("checkoutSubtitle")} align="center" />
-            <CheckoutForm
+            <LazyCheckoutForm
               lines={checkoutLines}
               compact
               submitLabel={t("placeOrder")}

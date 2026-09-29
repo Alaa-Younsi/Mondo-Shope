@@ -52,8 +52,8 @@ export interface ResolvedShipping {
 }
 
 /**
- * THE single shipping rule, shared by Checkout, InlineCheckout and the landing
- * page order form.
+ * THE single shipping rule, used by CheckoutForm on every checkout surface
+ * (cart checkout, product buy-now, landing-page order form).
  *
  * It must mirror place_order() exactly. When these drifted apart once, the
  * checkout kept adding the wilaya fee while the server zeroed it above the

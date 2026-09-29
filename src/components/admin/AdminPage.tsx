@@ -64,16 +64,23 @@ export function Panel({
  * `whitespace-nowrap` on the cells, mobile widths wrap order numbers, names and
  * dates into unreadable multi-line cells instead of scrolling.
  */
+const MIN_WIDTH = {
+  sm: "min-w-[34rem]",
+  md: "min-w-[44rem]",
+  lg: "min-w-[46rem]",
+  xl: "min-w-[52rem]",
+} as const;
+
 export function TableScroll({
   children,
-  minWidth = "44rem",
+  minWidth = "md",
 }: {
   children: ReactNode;
-  minWidth?: string;
+  minWidth?: keyof typeof MIN_WIDTH;
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-line bg-panel">
-      <div style={{ minWidth }}>{children}</div>
+      <div className={MIN_WIDTH[minWidth]}>{children}</div>
     </div>
   );
 }
